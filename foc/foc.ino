@@ -78,7 +78,7 @@ void setup() {
 
 
 
-  FastLED.addLeds<WS2812B, DATA_PIN, GBR>(leds, NUM_LEDS);
+  FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
   //  FastLED.addLeds<SK9822, DATA_PIN, CLOCK_PIN, BGR>(leds, NUM_LEDS);
 
   //This is where the power is regulated.  These pebble lights are kinda weird, so it will be some trial an error....
