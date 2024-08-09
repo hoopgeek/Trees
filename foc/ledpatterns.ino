@@ -2,6 +2,8 @@
 // 1||2 3||4 5||6
 //     1    2    3
 
+#define MAX_UINT16 65536L
+
 /**
  * Sets an LED for a specific branch.
  *
@@ -159,7 +161,7 @@ void patternFire() {
 }
 
 //gradient wipe
-void gradientWipe() {
+void patternGradientWipe() {
   // A slow changing base gradient that is periodically "wiped" away with a
   // gradient of a new set of hues.
   // https://www.desmos.com/calculator/kbbzcf0hgr
@@ -167,27 +169,27 @@ void gradientWipe() {
   // A value that is used to map each LED index onto a shifting gradient. Higher
   // gives the LEDs a more uniform color.
   // Range: [1, NUM_LED]
-  static int GRADIENT_SPREAD = 1;
+  static const int GRADIENT_SPREAD = 1;
 
   // How quickly the base gradient changes. Lower is faster.
-  static int GRADIENT_SPEED = 20;
+  static const int GRADIENT_SPEED = 20;
 
   // How far the hue should jump on the wipe.
   // Range: [0, 255]
-  static int WIPE_DISTANCE = 64;
+  static const int WIPE_DISTANCE = 64;
 
   // How frequently wipes occur where the number is the denominator of how often
   // the tree should be wiping. For example: A value of 3 indicates that a wipe
   // will be happening 1/3 of the time. The actual period time is specified by
   // GRADIENT_SPEED.
-  static int WIPE_PERIOD = 3;
+  static const int WIPE_PERIOD = 3;
 
   // How fast the wipe moves across the tree. Lower is faster.
-  static int WIPE_SPEED = 40;
+  static const int WIPE_SPEED = 40;
 
   // The "value" of the HSV component.
   // Range: [0, 255]
-  static int VALUE = 255;
+  static const int VALUE = 255;
 
   long t = theClock();
 
@@ -202,5 +204,47 @@ void gradientWipe() {
     int h = abs(wipe + gradient) % 256;
 
     setAllBranchLed(i, CHSV(h, 255, VALUE));
+  }
+}
+
+//swingingLights
+void patternSwingingLights() {
+  // The lights to include in this pattern.
+  static const CRGB colors[] = { CRGB(255, 0, 0), CRGB(0, 255, 0), CRGB(0, 0, 255) };
+  static const uint8_t colorsSize = 3;
+
+  static const int PERIOD = 5000;  // The lights complete a cycle every PERIOD ms.
+  static const int SPREAD = 6;     // Each light spans 1/SPREAD of the full branch.
+
+  static CRGB scratchPad[SIDE_LENGTH];
+
+  for (int b = 0; b < 3; b++) {
+    fill_solid(scratchPad, SIDE_LENGTH, CRGB::Black);
+    const fract16 angle = ((theClock() + b * 7919) % PERIOD) * MAX_UINT16 / PERIOD;
+
+    for (int l = 0; l < colorsSize; ++l) {
+      // Offset lights evenly.
+      const fract16 lightOffset = l * MAX_UINT16 / colorsSize;
+      // Figure out the center of each light.
+      const fract16 lightPos = sin16(lightOffset + angle) + MAX_UINT16 / 2;
+
+      for (int i = 0; i < SIDE_LENGTH; ++i) {
+        const fract16 ledPos = i * MAX_UINT16 / SIDE_LENGTH;
+        // Has scale component so it can go negative next line.
+        const fract16 absDist = abs(lightPos - ledPos);
+        const fract16 scaledDist = max(MAX_UINT16 / SPREAD - absDist, 0L) * SPREAD;
+
+        CRGB lightColor = CRGB(colors[l]);
+        lightColor.r = ((uint32_t)lightColor.r * scaledDist) / MAX_UINT16;
+        lightColor.g = ((uint32_t)lightColor.g * scaledDist) / MAX_UINT16;
+        lightColor.b = ((uint32_t)lightColor.b * scaledDist) / MAX_UINT16;
+
+        scratchPad[i] = colorAddWithBloom(scratchPad[i], lightColor);
+      }
+
+      for (int i = 0; i < SIDE_LENGTH; ++i) {
+        setBranchLed(b, i, scratchPad[i]);
+      }
+    }
   }
 }

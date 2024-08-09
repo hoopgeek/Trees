@@ -30,7 +30,8 @@ painlessMesh mesh;
 #define COLORFUL 7
 #define FIRE 8
 #define GRADIENTWIPE 9
-#define FORESTPATTERENS 6
+#define SWINGINGLIGHTS 10
+#define FORESTPATTERENS 7
 
 #define TRIG_PIN1 13
 #define TRIG_PIN2 14
@@ -132,7 +133,8 @@ void loop() {
     if (treeState == STROBE) patternStrobe();
     if (treeState == COLORFUL) patternColorful();
     if (treeState == FIRE) patternFire();
-    if (treeState == GRADIENTWIPE) gradientWipe();
+    if (treeState == GRADIENTWIPE) patternGradientWipe();
+    if (treeState == SWINGINGLIGHTS) patternSwingingLights();
   }
 
   FastLED.show();

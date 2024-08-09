@@ -73,3 +73,23 @@ inline uint8_t perlinNoisePolar(uint32_t x, uint32_t y, uint8_t angle,
 
   return perlinNoise(x + x_offset, y + y_offset);
 }
+
+/**
+ * Adds two colors together and outputs the result with any channels going
+ * above 255 bleeding into the other two colors to make a "white hot spot"
+ * effect.
+ */
+inline CRGB colorAddWithBloom(CRGB a, CRGB b) {
+  int16_t red = ((int16_t) a.r) + b.r;
+  int16_t green = ((int16_t) a.g) + b.g;
+  int16_t blue = ((int16_t) a.b) + b.b;
+
+  int16_t redOverflow = max(red - 255, 0);
+  int16_t greenOverflow = max(green - 255, 0);
+  int16_t blueOverflow = max(blue - 255, 0);
+
+  return CRGB(
+    min(red + greenOverflow / 2 + blueOverflow / 2, 255),
+    min(green + redOverflow / 2 + blueOverflow / 2, 255),
+    min(blue + redOverflow / 2 + greenOverflow / 2, 255));
+}
