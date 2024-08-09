@@ -155,7 +155,20 @@ void patternColorful() {
 
 //fire
 void patternFire() {
-  patternStrobe();  //untill we have something here
+  static const CHSVPalette16 firePalette(
+      CHSV(0, 255, 8), CHSV(16, 249, 45), CHSV(30, 246, 113), CHSV(35, 200, 192));
+
+  for (int b = 0; b < 3; b++) {
+    for (int i = 0; i < SIDE_LENGTH; i++) {
+      // This has a bunch of random primes, feel free to change them!
+      uint8_t noise = perlinNoise(
+        // Offset LEDs in the x domain.
+        i * 40 + b * 997 + theClock() / 8,
+        // Offset sampling in the y domain over time.
+        b * 6899 + TREE_NUMBER * 7561 + theClock() / 2);
+      setBranchLed(b, i, ColorFromPalette(firePalette, noise, 255, LINEARBLEND_NOWRAP));
+    }
+  }
 }
 
 //gradient wipe
