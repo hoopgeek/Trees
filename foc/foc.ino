@@ -13,7 +13,9 @@ painlessMesh mesh;
 #define TREE_NUMBER 1  //each tree is numbered in order based on where it is located
 #define DETECTINCHES 12
 
-#define NUM_LEDS 360  //?? LEDs per branch
+#define SIDE_LENGTH 60
+#define BRANCH_LENGTH SIDE_LENGTH * 2
+#define NUM_LEDS BRANCH_LENGTH * 3
 
 #define DATA_PIN 23
 #define CLOCK_PIN 18
@@ -114,9 +116,6 @@ void loop() {
 
   //set the clock offset incase it isn't set
   //if (clockOffset == 0) getClockOffset();
-
-
-  // gradientWipe();
 
   // LED pattern
   if (millis() < 1000 * 15) {
