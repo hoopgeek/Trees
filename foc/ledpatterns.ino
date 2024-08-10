@@ -18,6 +18,7 @@ inline void setBranchLed(int branch, int ledIndex, CRGB color) {
 
 /**
  * Sets all LEDs on all branches to the same color.
+ *
  * @param ledIndex The index of the LED starting from the top of the tree. [0, SIDE_LENGTH]
  * @param color The color to set the LEDs.
  */
@@ -27,6 +28,11 @@ inline void setAllBranchLed(int ledIndex, CRGB color) {
   setBranchLed(2, ledIndex, color);
 }
 
+/**
+ * Gets a random time per branch to ensure all the branches aren't synced.
+ *
+ * @param branch The index of the branch to get the time for.
+ */ 
 inline uint16_t randomBranchTime(int branch) {
   return theClock() + branch * 7919;
 }
