@@ -13,7 +13,7 @@ painlessMesh mesh;
 #define TREE_NUMBER 1  //each tree is numbered in order based on where it is located
 #define DETECTINCHES 12
 
-#define SIDE_LENGTH 60
+#define SIDE_LENGTH 16
 #define BRANCH_LENGTH SIDE_LENGTH * 2
 #define NUM_LEDS BRANCH_LENGTH * 3
 
@@ -31,7 +31,8 @@ painlessMesh mesh;
 #define FIRE 8
 #define GRADIENTWIPE 9
 #define SWINGINGLIGHTS 10
-#define FORESTPATTERENS 7
+#define PSYCHEDELLIC 11
+#define FORESTPATTERENS 8
 
 #define TRIG_PIN1 13
 #define TRIG_PIN2 14
@@ -135,6 +136,7 @@ void loop() {
     if (treeState == FIRE) patternFire();
     if (treeState == GRADIENTWIPE) patternGradientWipe();
     if (treeState == SWINGINGLIGHTS) patternSwingingLights();
+    if (treeState == PSYCHEDELLIC) patternPsychedellic();
   }
 
   FastLED.show();
