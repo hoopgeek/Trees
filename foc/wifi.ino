@@ -7,12 +7,8 @@ bool gotCommand() {
   //}
 }
 
-void tellForest(String msg) {
-  sendMessage(msg);
-}
 
-
-void sendMessage(String status) {
+void tellForest(String status) {
 
   Serial.println();
   Serial.println("Start Sending....");
@@ -47,13 +43,14 @@ void receivedCallback(uint32_t from, String &msg) {
   Serial.println("Message =");
   Serial.println(msg);
   String json = msg.c_str();
-  ;
+
   DynamicJsonDocument doc(1024);
   DeserializationError error = deserializeJson(doc, json);
   if (error) {
     Serial.print("deserializeJson() failed: ");
     Serial.println(error.c_str());
   } else {
+    updateAlive(from);
     if (doc["status"] == "ACTIVATED") {
       int treeNumber = getTreeIndexByNodeId(from);
       if (treeNumber > 0 && treeNumber <= 25) {
@@ -76,15 +73,6 @@ void receivedCallback(uint32_t from, String &msg) {
     if (doc["status"] == "IMATREE") {
       //tree checking in to say they alive
       Serial.printf("\nIMATREE %i", from);
-      int theTree = getTreeIndexByNodeId(from);
-      if (theTree < NUM_TREES) {
-        forestLastAlive[theTree] = millis();
-        Serial.printf("\n..Tree %i", theTree);
-      } else {
-        //this tree needs added
-        addNewTree(from);
-        Serial.printf("\nAdding");
-      }
     }
     if (doc["status"] == "PARTY") {
       Serial.printf("\nPARTY %i", from);
@@ -103,9 +91,25 @@ void receivedCallback(uint32_t from, String &msg) {
   }
 }
 
+void updateAlive(uint32_t from) {
+  int theTree = getTreeIndexByNodeId(from);
+  if (theTree < NUM_TREES) {
+    forestLastAlive[theTree] = millis();
+    Serial.printf("\n..Tree %i", theTree);
+  } else {
+    //this tree needs added
+    addNewTree(from);
+    Serial.printf("\nAdding");
+  }
+}
+
 void ImAlive() {
   //send IMATREE
-  sendMessage("IMATREE");
+  if (treeState == ACTIVATED) {
+    tellForest("ACTIVATED");
+  } else {
+    tellForest("IMATREE");
+  }
 }
 
 

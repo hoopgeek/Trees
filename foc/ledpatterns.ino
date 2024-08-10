@@ -84,16 +84,15 @@ void blueSpruce() {
   for (int i = 0; i < NUM_LEDS; ++i) {
     //the random blue tint is to make it shimmer
     if (random8(10) == 1) {
-      leds[i] = CHSV(93, 255, 32);  //blueish
+      leds[i] = CHSV(97, 255, 32);  //greenish
     } else {
-      leds[i] = CHSV(40, 255, 32);  //greenish
+      leds[i] = CHSV(134, 255, 32);  //blueish
     }
   }
 }
 
 //all off
 void darkForest() {
-  // A sexy little command to set all the LEDs to black.
   fill_solid(leds, NUM_LEDS, CRGB::Black);
 }
 

@@ -164,8 +164,8 @@ void loop() {
     }
   }
 
-  //brodcast IMATREE every 120 seconds
-  if (millis() - lastImAlive > 120000) {
+  //brodcast IMATREE every 0.3 seconds
+  if (millis() - lastImAlive > 300) {
     ImAlive();
     lastImAlive = millis();
   }
