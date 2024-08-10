@@ -121,10 +121,15 @@ void patternStrobe() {
   if (random8(100) == 1 && patternTime == 0) {
     patternTime = millis();
   }
-  if (millis() > patternTime + 200) {
+  if (millis() > patternTime + 360) {
     patternTime = 0;
   }
-  if (patternTime > 0) {
+  long pt = millis() - patternTime; 
+  if (pt > 0 && pt <= 40
+    || pt > 80 && pt <= 120
+    || pt > 160 && pt <= 200
+    || pt > 240 && pt <= 280
+    || pt > 320 && pt <= 360) {
     for (int i = 0; i < NUM_LEDS; ++i) {
       leds[i] = CRGB::White;
     }
