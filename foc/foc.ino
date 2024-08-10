@@ -13,7 +13,7 @@ painlessMesh mesh;
 #define TREE_NUMBER 1  //each tree is numbered in order based on where it is located
 #define DETECTINCHES 12
 
-#define SIDE_LENGTH 16
+#define SIDE_LENGTH 60
 #define BRANCH_LENGTH SIDE_LENGTH * 2
 #define NUM_LEDS BRANCH_LENGTH * 3
 
