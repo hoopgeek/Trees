@@ -11,7 +11,7 @@ Scheduler userScheduler;
 painlessMesh mesh;
 
 #define TREE_NUMBER 1  //each tree is numbered in order based on where it is located
-#define DETECTINCHES 12
+#define DETECTINCHES 48
 
 #define SIDE_LENGTH 60
 #define BRANCH_LENGTH SIDE_LENGTH * 2
@@ -40,7 +40,7 @@ painlessMesh mesh;
 #define ECHO_PIN2 27
 #define ECHO_PIN3 25
 
-int activeTimeout = 10000;  //10 seconds to activate all the trees
+int activeTimeout = 15000;  //15 seconds to activate all the trees
 int treeState = 0;          //0 is default blue spruce rest state
 long startActiveTime = 0;
 long lastActiveTime = 0;
@@ -53,6 +53,7 @@ long lastSensor = 0;
 long lastImAlive = 0;
 long lastPruneForest = 0;
 long lastCheckForest = 0;
+long lastStatus = 0;
 
 #define NUM_TREES 25
 bool forestState[NUM_TREES + 1];  //forestState[0] is the collective forest state
@@ -60,7 +61,7 @@ long forestNodes[NUM_TREES];      //keep a table of the mesh node ids
 long forestLastAlive[NUM_TREES];  //millis of the last time we heard from each tree
 
 CRGB leds[NUM_LEDS];
-int offset = 0;
+// int offset = 0;
 byte masterHue;
 long patternTime = 0;
 int partyCount = 0;
@@ -164,14 +165,14 @@ void loop() {
     }
   }
 
-  //brodcast IMATREE every 0.3 seconds
-  if (millis() - lastImAlive > 300) {
+  //brodcast IMATREE every 0.5 seconds
+  if (millis() - lastImAlive > 500) {
     ImAlive();
     lastImAlive = millis();
   }
 
-  //prune forest every 5 minutes
-  if (millis() - lastPruneForest > 300000) {
+  //prune forest every 15 seconds
+  if (millis() - lastPruneForest > 15000) {
     pruneForest();
     lastPruneForest = millis();
   }
@@ -182,6 +183,12 @@ void loop() {
     //also decay party count
     if (partyCount > 0) --partyCount;
     lastCheckForest = millis();
+  }
+
+  //output status
+  if (millis() - lastStatus > 2000) {
+    Serial.printf("\n\n** Active: %i, Live: %i **\n\n", activeTreesCount(), aliveTreesCount());
+    lastStatus = millis();
   }
 
   // *check for sensor detection every 200ms
@@ -222,7 +229,7 @@ void loop() {
       if (treeState == ACTIVATING) treeState = DEFAULT;
     }
     //expire activation
-    if (treeState == ACTIVATED && lastActiveTime < millis() - 5000) {
+    if (treeState == ACTIVATED && lastActiveTime < millis() - activeTimeout) {
       treeState = DEFAULT;
       tellForest("DEACTIVATED");
       forestState[1] = false;
@@ -230,19 +237,19 @@ void loop() {
     lastSensor = millis();
   }
 
-  //check for active timeout
-  if (treeState == ACTIVATED && millis() - lastActiveTime > activeTimeout) {
-    //go back to inacctive
-    treeState = DEFAULT;
-    forestState[1] = false;
-    tellForest("DEACTIVATED");
-    //should this tree state change be reported to other trees?
-  }
+  // //check for active timeout
+  // if (treeState == ACTIVATED && millis() - lastActiveTime > activeTimeout) {
+  //   //go back to inacctive
+  //   treeState = DEFAULT;
+  //   forestState[1] = false;
+  //   tellForest("DEACTIVATED");
+  //   //should this tree state change be reported to other trees?
+  // }
 
   // delay(10);
 
-  ++offset;
-  if (offset >= NUM_LEDS) offset = 0;
+  // ++offset;
+  // if (offset >= NUM_LEDS) offset = 0;
 }
 
 

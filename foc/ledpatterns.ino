@@ -34,37 +34,39 @@ void activePattern() {
     //layer on growing up the tree for 3 seconds on the activated side
     //do the grow up tree routine
     for (int i = 0; i < (millis() - startActiveTime) / 50; ++i) {
-      if (activeSensor == 1 || activeSensor == 2) {
-        setBranchLed(1, i, CHSV(floor(256 / 60) * i, 255, 255));
-      }
-      if (activeSensor == 3 || activeSensor == 1) {
-        setBranchLed(0, i, CHSV(floor(256 / 60) * i, 255, 255));
-      }
-      if (activeSensor == 2 || activeSensor == 3) {
-        setBranchLed(2, i, CHSV(floor(256 / 60) * i, 255, 255));
-      }
+      setAllBranchLed(59-i, CHSV(floor(256 / 60) * i, 255, 255));
+      // if (activeSensor == 1 || activeSensor == 2) {
+        // setBranchLed(1, 59-i, CHSV(floor(256 / 60) * i, 255, 255));
+      // }
+      // if (activeSensor == 3 || activeSensor == 1) {
+        // setBranchLed(0, 59-i, CHSV(floor(256 / 60) * i, 255, 255));
+      // }
+      // if (activeSensor == 2 || activeSensor == 3) {
+        // setBranchLed(2, 59-i, CHSV(floor(256 / 60) * i, 255, 255));
+      // }
     }
     //twinkle the leading LED
     if (random8(3) == 1) {
-      int lastLED = (millis() - startActiveTime) / 50 - 1;
+      int lastLED = 59 - ((millis() - startActiveTime) / 50 - 1);
       if (lastLED < 0) lastLED = 0;  //just in case
-      if (activeSensor == 1 || activeSensor == 2) {
-        setBranchLed(1, lastLED, CRGB::White);  //twinkle the leading LED
-      }
-      if (activeSensor == 3 || activeSensor == 1) {
-        setBranchLed(0, lastLED, CRGB::White);  //twinkle the leading LED
-      }
-      if (activeSensor == 2 || activeSensor == 3) {
-        setBranchLed(2, lastLED, CRGB::White);  //twinkle the leading LED
-      }
+        setAllBranchLed(lastLED, CRGB::White);  //twinkle the leading LED
+      // if (activeSensor == 1 || activeSensor == 2) {
+        // setBranchLed(1, lastLED, CRGB::White);  //twinkle the leading LED
+      // }
+      // if (activeSensor == 3 || activeSensor == 1) {
+        // setBranchLed(0, lastLED, CRGB::White);  //twinkle the leading LED
+      // }
+      // if (activeSensor == 2 || activeSensor == 3) {
+        // setBranchLed(2, lastLED, CRGB::White);  //twinkle the leading LED
+      // }
     }
   } else {
     //what do we do after fully active?
     //color wash (offset steps every 3/60 seconds: 50,000 microseconds)
     //by using getNodeTime() all the trees will have their patterns in sync
-    int offest = (mesh.getNodeTime() / 50000L) % 60;
+    int offset = (mesh.getNodeTime() / 50000L) % 60;
     for (int i = 0; i < 60; ++i) {
-      setAllBranchLed(i, CHSV(floor(256 / 60) * offset, 255, 255));
+      setAllBranchLed(i, CHSV(floor(256 / 60) * ((offset + i) % 60) , 255, 255));
     }
   }
 }

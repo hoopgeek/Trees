@@ -8,6 +8,17 @@ void pruneForest() {
   }
 }
 
+int activeTreesCount() {  
+  int numberOfActiveTrees = 0;
+  for (int i = 1; i <= NUM_TREES; ++i) {
+    if (forestState[i] == true) {
+      ++numberOfActiveTrees;
+      //Serial.println(i);
+    }
+  }
+  return numberOfActiveTrees;
+}
+
 //return the total number of tree that are currently alive (active nodes)
 int aliveTreesCount() {
   int aliveTrees = 0;
@@ -35,15 +46,9 @@ int getTreeIndexByNodeId(uint32_t nodeID) {
 //to account for the possibility of a tree being offline,
 // the forest will activate then the number of trees that are connected to the mesh = active trees
 void checkForest() {
-  int numberOfActiveTrees = 0;
+  int numberOfActiveTrees = activeTreesCount();
   int numberOfLiveTrees = aliveTreesCount();
-  for (int i = 1; i <= NUM_TREES; ++i) {
-    if (forestState[i] == true) {
-      ++numberOfActiveTrees;
-      //Serial.println(i);
-    }
-  }
-  Serial.printf("\nnumberOfActiveTrees %i, numberOfLiveTrees %i", numberOfActiveTrees, numberOfLiveTrees);
+  
   //save the forest state to the 0 array position
   if (numberOfActiveTrees >= numberOfLiveTrees) {
     //party time, is this a new state?

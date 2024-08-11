@@ -10,8 +10,8 @@ bool gotCommand() {
 
 void tellForest(String status) {
 
-  Serial.println();
-  Serial.println("Start Sending....");
+  // Serial.println();
+  // Serial.println("Start Sending....");
 
   // Serialize the message
   DynamicJsonDocument doc(1024);
@@ -19,7 +19,7 @@ void tellForest(String status) {
   String msg;
   serializeJson(doc, msg);  //
   mesh.sendBroadcast(msg);
-  Serial.println("Message ");
+  Serial.print("Sending: ");
   Serial.println(msg);
 }
 
@@ -40,7 +40,9 @@ void sendParty(int stateNumber) {
 // Deserialize the message
 void receivedCallback(uint32_t from, String &msg) {
 
-  Serial.println("Message =");
+  Serial.print("# ");
+  Serial.print(from);
+  Serial.print(" : ");
   Serial.println(msg);
   String json = msg.c_str();
 
@@ -54,7 +56,7 @@ void receivedCallback(uint32_t from, String &msg) {
     if (doc["status"] == "ACTIVATED") {
       int treeNumber = getTreeIndexByNodeId(from);
       if (treeNumber > 0 && treeNumber <= 25) {
-        Serial.printf("Tree Activated: %d\n", treeNumber);
+        //Serial.printf("Tree Activated: %d\n", treeNumber);
         forestState[treeNumber] = true;
         // checkForest();
       }
@@ -65,17 +67,17 @@ void receivedCallback(uint32_t from, String &msg) {
       //get the ID of the node sending the data and translate that to the tree index
       int treeNumber = getTreeIndexByNodeId(from);
       if (treeNumber > 0 && treeNumber <= 25) {
-        Serial.printf("Tree Deactivated: %d\n", treeNumber);
+        //Serial.printf("Tree Deactivated: %d\n", treeNumber);
         forestState[treeNumber] = false;
         // checkForest();
       }
     }
     if (doc["status"] == "IMATREE") {
       //tree checking in to say they alive
-      Serial.printf("\nIMATREE %i", from);
+      //Serial.printf("\nIMATREE %i", from);
     }
     if (doc["status"] == "PARTY") {
-      Serial.printf("\nPARTY %i", from);
+      //Serial.printf("\nPARTY %i", from);
       ++partyCount;
       if (partyCount > 1 && treeState < DRAW) {
         String thisState = doc["state"];
@@ -95,17 +97,17 @@ void updateAlive(uint32_t from) {
   int theTree = getTreeIndexByNodeId(from);
   if (theTree < NUM_TREES) {
     forestLastAlive[theTree] = millis();
-    Serial.printf("\n..Tree %i", theTree);
+    //Serial.printf("\n..Tree %i", theTree);
   } else {
     //this tree needs added
     addNewTree(from);
-    Serial.printf("\nAdding");
+    //Serial.printf("\nAdding");
   }
 }
 
 void ImAlive() {
   //send IMATREE
-  if (treeState == ACTIVATED) {
+  if (treeState >= ACTIVATED) {
     tellForest("ACTIVATED");
   } else {
     tellForest("IMATREE");
