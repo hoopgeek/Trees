@@ -12,8 +12,10 @@
  * @param color The color to set the LEDs.
  */
 inline void setBranchLed(int branch, int ledIndex, CRGB color) {
-  leds[ledIndex + branch * BRANCH_LENGTH] = color;
-  leds[(BRANCH_LENGTH - ledIndex - 1) + branch * BRANCH_LENGTH] = color;
+  if (ledIndex >= 0 && ledIndex < SIDE_LENGTH) {
+    leds[ledIndex + branch * BRANCH_LENGTH] = color;
+    leds[(BRANCH_LENGTH - ledIndex - 1) + branch * BRANCH_LENGTH] = color;
+  }
 }
 
 /**
@@ -32,9 +34,9 @@ inline void setAllBranchLed(int ledIndex, CRGB color) {
  * Gets a random time per branch to ensure all the branches aren't synced.
  *
  * @param branch The index of the branch to get the time for.
- */ 
+ */
 inline uint16_t randomBranchTime(int branch) {
-  return theClock() + branch * 7919;
+  return theClock() + branch * 7919 + TREE_NUMBER * 7723;
 }
 
 void activePattern() {
@@ -294,6 +296,43 @@ void patternPsychedellic() {
 
       setBranchLed(b, i, ColorFromPalette(palette, noise, 255, LINEARBLEND_NOWRAP));
       // setBranchLed(b, i, CHSV(noise, 255, 255));
+    }
+  }
+}
+
+//Racing Lights
+void patternRacingLights() {
+  static const uint8_t colorsSize = 3;
+
+  static const int PERIOD = 2;  // The lights will only be on the branch 1/PERIOD of the time.
+  static const int SPREAD = 6;  // Each light spans 1/SPREAD of the full branch.
+  static const int NUM_LIGHTS = 6;
+  static const int LIGHT_LENGTH = 8;
+
+  static CRGB scratchPad[SIDE_LENGTH];
+
+  for (int b = 0; b < 3; b++) {
+    fill_solid(scratchPad, SIDE_LENGTH, CRGB::Black);
+
+    for (int l = 0; l < NUM_LIGHTS; ++l) {
+      // Make the lights run at different speeds.
+      const uint16_t lightPos = SIDE_LENGTH - (((randomBranchTime(b) * (l + 1) + l * 997) >> 7) % (SIDE_LENGTH * PERIOD + LIGHT_LENGTH * 2) - LIGHT_LENGTH * 2);
+
+      for (uint i = 0; i < SIDE_LENGTH; ++i) {
+        const int ledPos = i;
+        int intensity = max(((lightPos - ledPos) * 255) / LIGHT_LENGTH, 0);
+        if (intensity > 255) {
+          intensity = 0;
+        }
+
+        const uint8_t hue = b * 32 + l * 16;
+
+        scratchPad[i] = colorAddWithBloom(scratchPad[i], CHSV(hue, 255, intensity));
+      }
+
+      for (int i = 0; i < SIDE_LENGTH; ++i) {
+        setBranchLed(b, i, scratchPad[i]);
+      }
     }
   }
 }
