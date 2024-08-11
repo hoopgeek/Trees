@@ -18,6 +18,7 @@ inline void setBranchLed(int branch, int ledIndex, CRGB color) {
 
 /**
  * Sets all LEDs on all branches to the same color.
+ *
  * @param ledIndex The index of the LED starting from the top of the tree. [0, SIDE_LENGTH]
  * @param color The color to set the LEDs.
  */
@@ -25,6 +26,15 @@ inline void setAllBranchLed(int ledIndex, CRGB color) {
   setBranchLed(0, ledIndex, color);
   setBranchLed(1, ledIndex, color);
   setBranchLed(2, ledIndex, color);
+}
+
+/**
+ * Gets a random time per branch to ensure all the branches aren't synced.
+ *
+ * @param branch The index of the branch to get the time for.
+ */ 
+inline uint16_t randomBranchTime(int branch) {
+  return theClock() + branch * 7919;
 }
 
 void activePattern() {
@@ -164,7 +174,7 @@ void patternColorful() {
 //fire
 void patternFire() {
   static const CHSVPalette16 firePalette(
-      CHSV(0, 255, 8), CHSV(16, 249, 45), CHSV(30, 246, 113), CHSV(35, 200, 192));
+    CHSV(0, 255, 8), CHSV(16, 249, 45), CHSV(30, 246, 113), CHSV(35, 200, 192));
 
   for (int b = 0; b < 3; b++) {
     for (int i = 0; i < SIDE_LENGTH; i++) {
@@ -239,7 +249,7 @@ void patternSwingingLights() {
 
   for (int b = 0; b < 3; b++) {
     fill_solid(scratchPad, SIDE_LENGTH, CRGB::Black);
-    const fract16 angle = ((theClock() + b * 7919) % PERIOD) * MAX_UINT16 / PERIOD;
+    const fract16 angle = (randomBranchTime(b) % PERIOD) * MAX_UINT16 / PERIOD;
 
     for (int l = 0; l < colorsSize; ++l) {
       // Offset lights evenly.
@@ -264,6 +274,32 @@ void patternSwingingLights() {
       for (int i = 0; i < SIDE_LENGTH; ++i) {
         setBranchLed(b, i, scratchPad[i]);
       }
+    }
+  }
+}
+
+//Psychedellic
+void patternPsychedellic() {
+  // Change this to mkae it prettier.
+  static const CRGBPalette16 palette(
+    CRGB(0, 255, 0),
+    CRGB(255, 0, 0),
+    CRGB(0, 0, 255));
+
+  for (int b = 0; b < 3; b++) {
+    const uint16_t t = randomBranchTime(b) >> 4;
+
+    for (uint32_t i = 0; i < SIDE_LENGTH; ++i) {
+
+      // This has a bunch of random primes, feel free to change them!
+      uint8_t noise = perlinNoise(
+        // Offset LEDs in the x domain with a bit of time.
+        i * 40 + b * 6607,
+        // Offset sampling in the y domain over time.
+        b * 6899 + TREE_NUMBER * 7561 + t / 2);
+
+      setBranchLed(b, i, ColorFromPalette(palette, noise, 255, LINEARBLEND_NOWRAP));
+      // setBranchLed(b, i, CHSV(noise, 255, 255));
     }
   }
 }
