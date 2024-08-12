@@ -42,12 +42,12 @@ painlessMesh mesh;
 #define ECHO_PIN3 25
 
 int activeTimeout = 15000;  //15 seconds to activate all the trees
-int treeState = 0;          //0 is default blue spruce rest state
 long startActiveTime = 0;
 long lastActiveTime = 0;
 int activeSensor = 1;  //must be 1, 2, or 3
 long pullTime = 0;
 long activateTime = 0;
+long lastPartyTime = 0;
 
 long clockOffset = 0;
 long lastSensor = 0;
@@ -57,15 +57,14 @@ long lastCheckForest = 0;
 long lastStatus = 0;
 
 #define NUM_TREES 25
-bool forestState[NUM_TREES + 1];  //forestState[0] is the collective forest state
-long forestNodes[NUM_TREES];      //keep a table of the mesh node ids
+int forestState[NUM_TREES + 1];  //forestState[NUM_TREES] is the collective forest state, forestState[0] is me
+long forestNodes[NUM_TREES];      //keep a table of the mesh node ids forestNodes[0] is me
 long forestLastAlive[NUM_TREES];  //millis of the last time we heard from each tree
 
 CRGB leds[NUM_LEDS];
 // int offset = 0;
 byte masterHue;
 long patternTime = 0;
-int partyCount = 0;
 
 void setup() {
 
@@ -97,11 +96,11 @@ void setup() {
 
   //init our forest arrays
   for (int i = 0; i < NUM_TREES; ++i) {
-    forestState[i] = false;
+    forestState[i] = DEFAULT;
     forestNodes[i] = 0;
     forestLastAlive[i] = 0;
   }
-  forestState[NUM_TREES] = false;  //one extra in this guy
+  forestState[NUM_TREES] = DEFAULT;  //one extra in this guy
   forestNodes[0] = 1;              //this tree
 
   leds[0] = CRGB::Blue;
@@ -126,50 +125,46 @@ void loop() {
     testPattern();  //first 15 seconds
   } else {
 
-    if (treeState <= ACTIVATING) blueSpruce();
-    if (treeState == ACTIVATED) activePattern();
-    if (treeState == DRAW) darkForest();
+    if (forestState[0] <= ACTIVATING) blueSpruce();
+    if (forestState[0] == ACTIVATED) activePattern();
+    if (forestState[0] == DRAW) darkForest();
 
-    if (treeState == ROTATE) patternRotate();
-    if (treeState == SPARKLE) patternSparkle();
-    if (treeState == STROBE) patternStrobe();
-    if (treeState == COLORFUL) patternColorful();
-    if (treeState == FIRE) patternFire();
-    if (treeState == GRADIENTWIPE) patternGradientWipe();
-    if (treeState == SWINGINGLIGHTS) patternSwingingLights();
-    if (treeState == PSYCHEDELLIC) patternPsychedellic();
+    if (forestState[0] == ROTATE) patternRotate();
+    if (forestState[0] == SPARKLE) patternSparkle();
+    if (forestState[0] == STROBE) patternStrobe();
+    if (forestState[0] == COLORFUL) patternColorful();
+    if (forestState[0] == FIRE) patternFire();
+    if (forestState[0] == GRADIENTWIPE) patternGradientWipe();
+    if (forestState[0] == SWINGINGLIGHTS) patternSwingingLights();
+    if (forestState[0] == PSYCHEDELLIC) patternPsychedellic();
   }
 
   FastLED.show();
 
-  // *check for wifi communications
-  if (gotCommand()) {
-  }
-
   //trigger activation on 5 second network time
   long meshTime = mesh.getNodeTime();
   if (meshTime > activateTime) {
-    if (treeState == DRAW) {
+    if (forestState[0] == DRAW) {
       //activate
       long seed = meshTime / 10000000;
-      treeState = nextState(seed);  //this function will know what to do
-      Serial.println("Start Party");
-      Serial.println(treeState);
-      sendParty(treeState);
+      changeState(nextState(seed));  //this function will know what to do
+      Serial.print("Start Party ");
+      Serial.println(forestState[0]);
+      broadcastStatus();
       pullTime = millis();
+      lastPartyTime = millis();
     }
     //shut down after 30 seconds
-    if (treeState > DRAW && (pullTime < millis() - 30000)) {
+    if (forestState[0] > DRAW && (pullTime < millis() - 30000)) {
       Serial.println("Party Over");
-      treeState = DEFAULT;
-      forestState[0] = false;
+      changeState(DEFAULT);
       clearForestActivity();
     }
   }
 
-  //brodcast IMATREE every 0.5 seconds
+  //brodcast status update
   if (millis() - lastImAlive > 500) {
-    ImAlive();
+    broadcastStatus();
     lastImAlive = millis();
   }
 
@@ -182,14 +177,12 @@ void loop() {
   //check to see if the forest is active every 500ms
   if (millis() - lastCheckForest > 500) {
     checkForest();
-    //also decay party count
-    if (partyCount > 0) --partyCount;
     lastCheckForest = millis();
   }
 
   //output status
   if (millis() - lastStatus > 2000) {
-    Serial.printf("\n\n** Active: %i, Live: %i **\n\n", activeTreesCount(), aliveTreesCount());
+    Serial.printf("\n** Active: %i, Live: %i **\n", activeTreesCount(), aliveTreesCount());
     lastStatus = millis();
   }
 
@@ -214,12 +207,11 @@ void loop() {
       }
       Serial.println(" ");
 
-      if (treeState == DEFAULT) {
-        treeState = ACTIVATING;
-      } else if (treeState == ACTIVATING) {
-        treeState = ACTIVATED;
-        forestState[1] = true;
-        tellForest("ACTIVATED");
+      if (forestState[0] == DEFAULT) {
+        changeState(ACTIVATING);
+      } else if (forestState[0] == ACTIVATING) {
+        changeState(ACTIVATED);
+        broadcastStatus();
         startActiveTime = millis();
         lastActiveTime = millis();
       } else {
@@ -227,26 +219,16 @@ void loop() {
       }
 
     } else {
-      //treeState = 0;
-      if (treeState == ACTIVATING) treeState = DEFAULT;
+      if (forestState[0] == ACTIVATING) changeState(DEFAULT);
     }
     //expire activation
-    if (treeState == ACTIVATED && lastActiveTime < millis() - activeTimeout) {
-      treeState = DEFAULT;
-      tellForest("DEACTIVATED");
-      forestState[1] = false;
+    if (forestState[0] == ACTIVATED && lastActiveTime < millis() - activeTimeout) {
+      changeState(DEFAULT);
+
+      broadcastStatus();
     }
     lastSensor = millis();
   }
-
-  // //check for active timeout
-  // if (treeState == ACTIVATED && millis() - lastActiveTime > activeTimeout) {
-  //   //go back to inacctive
-  //   treeState = DEFAULT;
-  //   forestState[1] = false;
-  //   tellForest("DEACTIVATED");
-  //   //should this tree state change be reported to other trees?
-  // }
 
   // delay(10);
 

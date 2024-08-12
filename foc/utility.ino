@@ -1,17 +1,30 @@
+void changeState(int newState) {
+  Serial.printf("\State Change: %i => %i\n", forestState[0], newState);
+  forestState[0] = newState;
+}
+
 //prune any tree from the forest that hasn't talked in 5 minutes
 void pruneForest() {
+  if (millis() < 300000) return;
+  //start at 1 because forestNodes[0] is me
   for (int i = 1; i < NUM_TREES; ++i) {
-    if (forestLastAlive[i] < millis() - 300000) {
-      //he's dead Jim, remove the node
-      forestNodes[i] = 0;
+    if (forestNodes[i] != 0) {
+      if (forestLastAlive[i] < (millis() - 300000)) {
+        //he's dead Jim, remove the node
+        //forestState[0] is me
+        Serial.printf("\nTree %i pruned @ %lu \n", i, forestNodes[i]);
+        //Serial.printf(" ... forestLastAlive[] %lu < %lu \n", forestLastAlive[i], millis()-300000);
+        if (i > 1) forestState[i] = 0;
+        forestNodes[i] = 0;
+      }
     }
   }
 }
 
 int activeTreesCount() {  
   int numberOfActiveTrees = 0;
-  for (int i = 1; i <= NUM_TREES; ++i) {
-    if (forestState[i] == true) {
+  for (int i = 0; i < NUM_TREES; ++i) {
+    if (forestState[i] == ACTIVATED) {
       ++numberOfActiveTrees;
       //Serial.println(i);
     }
@@ -31,15 +44,27 @@ int aliveTreesCount() {
   return aliveTrees;
 }
 
-//function will return the index of the forestNode or NUM_TREES if not found
+//return the total number of tree that are currently alive (active nodes)
+int partyTreesCount() {
+  int partyTrees = 0;
+  for (int i = 1; i <= NUM_TREES; ++i) {
+    if (forestState[i] > ACTIVATED) {
+      ++partyTrees;
+    }
+  }
+  return partyTrees;
+}
+
+//function will return the index of the forestNode or 0 if not found
 int getTreeIndexByNodeId(uint32_t nodeID) {
-  int theID = NUM_TREES;
-  for (int i = 0; i < NUM_TREES; ++i) {
+  int theID = 0;
+  //start at 1, because 0 is me
+  for (int i = 1; i < NUM_TREES; ++i) {
     if (forestNodes[i] == nodeID) {
       theID = i;
     }
   }
-  return theID + 1;
+  return theID;
 }
 
 //check the forestState array to see if all the trees are active
@@ -50,18 +75,13 @@ void checkForest() {
   int numberOfLiveTrees = aliveTreesCount();
   
   //save the forest state to the 0 array position
-  if (numberOfActiveTrees >= numberOfLiveTrees) {
+  if (numberOfActiveTrees >= numberOfLiveTrees && numberOfLiveTrees > 1) {
     //party time, is this a new state?
-    if (forestState[0]) {
+    if (forestState[0] > ACTIVATED) {
       //we're already active
     } else {
-      //newly active
-      forestState[0] = true;
-      //how do we know what to do?
       activateForest();  //this will know what to do
     }
-  } else {
-    forestState[0] = false;
   }
 }
 
@@ -73,12 +93,13 @@ void activateForest() {
   temp = temp / 5;
   temp = temp * 5 * 1000000L + 5000000L;
   activateTime = temp;  // 5 to 10 seconds from now on a second divisible by 5;
-  treeState = DRAW;
+  changeState(DRAW);
 }
 
 void clearForestActivity() {
-  for (int i = 0; i < NUM_TREES; ++i) {
-    forestState[i] = false;
+  changeState(DEFAULT);
+  for (int i = 1; i <= NUM_TREES; ++i) {
+    forestState[i] = DEFAULT;
   }
 }
 
