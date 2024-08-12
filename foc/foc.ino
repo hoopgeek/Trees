@@ -32,7 +32,8 @@ painlessMesh mesh;
 #define GRADIENTWIPE 9
 #define SWINGINGLIGHTS 10
 #define PSYCHEDELLIC 11
-#define FORESTPATTERENS 8
+#define RACINGLIGHTS 12
+#define FORESTPATTERENS 9
 
 #define TRIG_PIN1 13
 #define TRIG_PIN2 14
@@ -138,6 +139,7 @@ void loop() {
     if (treeState == GRADIENTWIPE) patternGradientWipe();
     if (treeState == SWINGINGLIGHTS) patternSwingingLights();
     if (treeState == PSYCHEDELLIC) patternPsychedellic();
+    if (treeState == RACINGLIGHTS) patternRacingLights();
   }
 
   FastLED.show();
