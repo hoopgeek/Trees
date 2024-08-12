@@ -33,7 +33,9 @@ painlessMesh mesh;
 #define SWINGINGLIGHTS 10
 #define PSYCHEDELLIC 11
 #define RACINGLIGHTS 12
-#define FORESTPATTERENS 9
+#define RAINBOWFOREST 13
+#define ROUNDTHETREES 14
+#define FORESTPATTERENS 11
 
 #define TRIG_PIN1 13
 #define TRIG_PIN2 14
@@ -129,7 +131,7 @@ void loop() {
     if (forestState[0] <= ACTIVATING) blueSpruce();
     if (forestState[0] == ACTIVATED) activePattern();
     if (forestState[0] == DRAW) darkForest();
-
+    
     if (forestState[0] == ROTATE) patternRotate();
     if (forestState[0] == SPARKLE) patternSparkle();
     if (forestState[0] == STROBE) patternStrobe();
@@ -139,6 +141,8 @@ void loop() {
     if (forestState[0] == SWINGINGLIGHTS) patternSwingingLights();
     if (forestState[0] == PSYCHEDELLIC) patternPsychedellic();
     if (forestState[0] == RACINGLIGHTS) patternRacingLights();
+    if (forestState[0] == RAINBOWFOREST) patternRainbowForest();
+    if (forestState[0] == ROUNDTHETREES) patternRoundTheTrees();
   }
 
   FastLED.show();

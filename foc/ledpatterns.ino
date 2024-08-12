@@ -39,6 +39,31 @@ inline uint16_t randomBranchTime(int branch) {
   return theClock() + branch * 7919 + TREE_NUMBER * 7723;
 }
 
+/**
+ * Returns the theta value of a tree offset by the time.
+ *
+ * @param time The time. Range [0, 65536]
+ * @returns The theta value. Range [0, 65536]
+ */
+inline uint16_t treeTheta(uint16_t time) {
+  return (((TREE_NUMBER - 1) * MAX_UINT16) / min(aliveTreesCount(), 1) - time) % MAX_UINT16;
+}
+
+/**
+ * Returns a brightness value in which the brightness moves around the forest
+ * based on time and is spread out among spread * 2 trees.
+ *
+ * @param time The time. Range [0, 65536]
+ * @param spread How far the high value should spread in number of trees.
+ * @returns The brightness of the tree at this time.
+ */
+uint16_t cycleTree(uint16_t time, uint8_t spread) {
+  const uint8_t aliveTrees = min(aliveTreesCount(), 1);
+  return max(
+    (abs(MAX_UINT16 / 2 - treeTheta(time)) * aliveTrees - (aliveTrees - spread * 2) * MAX_UINT16 / 2) / spread,
+    0L);
+}
+
 void activePattern() {
   if (millis() - startActiveTime < 3000) {
     //start with a base coat of the default blue spruce
@@ -340,5 +365,32 @@ void patternRacingLights() {
         setBranchLed(b, i, scratchPad[i]);
       }
     }
+  }
+}
+
+//Rainbow forest
+void patternRainbowForest() {
+  uint8_t hue = treeTheta(theClock() * 28) / 256;
+  for (int i = 0; i < NUM_LEDS; ++i) {
+    leds[i] = CHSV(hue, 255, 255);
+  }
+}
+
+//Round the trees
+void patternRoundTheTrees() {
+  static const uint8_t NUM_BRIGHT_SPOTS = 3;
+
+  uint16_t brightness = 0L;
+  for (int b = 0; b < NUM_BRIGHT_SPOTS; ++b) {
+    brightness = max(brightness, cycleTree((MAX_UINT16 * b / NUM_BRIGHT_SPOTS) + theClock() * 28, 1));
+  }
+
+  for (int i = 0; i < SIDE_LENGTH; ++i) {
+    setAllBranchLed(
+      i,
+      CHSV(
+        treeTheta(theClock() * 8) / 256,
+        255,
+        brightness / 256));
   }
 }
