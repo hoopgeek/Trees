@@ -5,16 +5,16 @@ void changeState(int newState) {
 
 //prune any tree from the forest that hasn't talked in 5 minutes
 void pruneForest() {
-  if (millis() < 300000) return;
+  if (millis() < 4000) return;
   //start at 1 because forestNodes[0] is me
   for (int i = 1; i < NUM_TREES; ++i) {
     if (forestNodes[i] != 0) {
-      if (forestLastAlive[i] < (millis() - 300000)) {
+      if (forestLastAlive[i] < (millis() - 4000)) {
         //he's dead Jim, remove the node
         //forestState[0] is me
         Serial.printf("\nTree %i pruned @ %lu \n", i, forestNodes[i]);
         //Serial.printf(" ... forestLastAlive[] %lu < %lu \n", forestLastAlive[i], millis()-300000);
-        if (i > 1) forestState[i] = 0;
+        forestState[i] = 0;
         forestNodes[i] = 0;
       }
     }
@@ -82,6 +82,12 @@ void checkForest() {
     } else {
       activateForest();  //this will know what to do
     }
+  }
+
+  if (numberOfLiveTrees == 1) {
+    imAlone = true;
+  } else {
+    imAlone = false;
   }
 }
 

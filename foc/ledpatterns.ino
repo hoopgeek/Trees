@@ -133,6 +133,16 @@ void blueSpruce() {
 //all off
 void darkForest() {
   fill_solid(leds, NUM_LEDS, CRGB::Black);
+  //ground lights to prevent tripping
+  leds[60] = CHSV(255, 0, 32);
+  leds[180] = CHSV(255, 0, 32);
+  leds[300] = CHSV(255, 0, 32);
+}
+
+//duplicate the last 10 LEDs for strands that are too long
+//(AKA, coding some duct tape on it and calling it good)
+void tooManyLEDsFix() {
+  memcpy(&leds[NUM_LEDS-11], &leds[NUM_LEDS-21], 30);
 }
 
 //tree rotate

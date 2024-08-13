@@ -10,12 +10,16 @@
 Scheduler userScheduler;
 painlessMesh mesh;
 
-#define TREE_NUMBER 1  //each tree is numbered in order based on where it is located
+#define TREE_NUMBER 13  //each tree is numbered in order based on where it is located
 #define DETECTINCHES 48
 
+//changed these so it didn't have to do math every time BRANCH_LENGTH and NUM_LEDS are used
+//also added 10 extra LEDs to NUM_LEDS since some of the strands were cut long
 #define SIDE_LENGTH 60
-#define BRANCH_LENGTH SIDE_LENGTH * 2
-#define NUM_LEDS BRANCH_LENGTH * 3
+#define BRANCH_LENGTH 120
+#define NUM_LEDS 370 
+#define PARTY_MILLISECONDS 60000 
+#define REST_MILLISECONDS 10000
 
 #define DATA_PIN 23
 #define CLOCK_PIN 18
@@ -44,7 +48,7 @@ painlessMesh mesh;
 #define ECHO_PIN2 27
 #define ECHO_PIN3 25
 
-int activeTimeout = 15000;  //15 seconds to activate all the trees
+int activeTimeout = 25000;  //25 seconds to activate all the trees
 long startActiveTime = 0;
 long lastActiveTime = 0;
 int activeSensor = 1;  //must be 1, 2, or 3
@@ -58,6 +62,8 @@ long lastImAlive = 0;
 long lastPruneForest = 0;
 long lastCheckForest = 0;
 long lastStatus = 0;
+
+bool imAlone = true;
 
 #define NUM_TREES 25
 int forestState[NUM_TREES + 1];  //forestState[NUM_TREES] is the collective forest state, forestState[0] is me
@@ -87,7 +93,7 @@ void setup() {
   //  FastLED.addLeds<SK9822, DATA_PIN, CLOCK_PIN, BGR>(leds, NUM_LEDS);
 
   //This is where the power is regulated.  These pebble lights are kinda weird, so it will be some trial an error....
-  FastLED.setMaxPowerInVoltsAndMilliamps(5, 1000);
+  FastLED.setMaxPowerInVoltsAndMilliamps(5, 800);
 
   mesh.setDebugMsgTypes(ERROR | STARTUP);
   mesh.init(MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT);
@@ -143,7 +149,11 @@ void loop() {
     if (forestState[0] == RACINGLIGHTS) patternRacingLights();
     if (forestState[0] == RAINBOWFOREST) patternRainbowForest();
     if (forestState[0] == ROUNDTHETREES) patternRoundTheTrees();
+
+    if (imAlone) darkForest(); //turn the tree dark if it's not connecting to others on the network
   }
+
+  tooManyLEDsFix();
 
   FastLED.show();
 
@@ -160,8 +170,8 @@ void loop() {
       pullTime = millis();
       lastPartyTime = millis();
     }
-    //shut down after 30 seconds
-    if (forestState[0] > DRAW && (pullTime < millis() - 30000)) {
+    //shut down after 60 seconds
+    if (forestState[0] > DRAW && (pullTime < millis() - PARTY_MILLISECONDS)) {
       Serial.println("Party Over");
       changeState(DEFAULT);
       clearForestActivity();
@@ -174,15 +184,16 @@ void loop() {
     lastImAlive = millis();
   }
 
-  //prune forest every 15 seconds
-  if (millis() - lastPruneForest > 15000) {
-    pruneForest();
-    lastPruneForest = millis();
-  }
+  // //prune forest every 15 seconds
+  // if (millis() - lastPruneForest > 15000) {
+  //   pruneForest();
+  //   lastPruneForest = millis();
+  // }
 
   //check to see if the forest is active every 500ms
   if (millis() - lastCheckForest > 500) {
     checkForest();
+    pruneForest();
     lastCheckForest = millis();
   }
 
@@ -193,7 +204,7 @@ void loop() {
   }
 
   // *check for sensor detection every 200ms
-  if (millis() - lastSensor > 200) {
+  if (millis() - lastSensor > 200 && lastPartyTime < millis() - (PARTY_MILLISECONDS + REST_MILLISECONDS)) {
     byte sensors = gotSensor();
     if (sensors != 0) {
       Serial.print("Sensor ");

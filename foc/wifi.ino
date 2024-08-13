@@ -1,14 +1,14 @@
 // Deserialize the message
 void receivedCallback(uint32_t from, String &msg) {
 
-  //  Serial.print("# ");
-  //  Serial.print(from);
-  //  Serial.print(" : ");
-  //  Serial.println(msg);
-  String json = msg.c_str();
+   Serial.print("# ");
+   Serial.print(from);
+   Serial.print(" : ");
+   Serial.println(msg);
+  // String json = msg.c_str();  //now passing it stright in below to save memory
 
-  DynamicJsonDocument doc(1024);
-  DeserializationError error = deserializeJson(doc, json);
+  DynamicJsonDocument doc(256);  //was 1024 but memory errors
+  DeserializationError error = deserializeJson(doc, msg);
   if (error) {
     Serial.print("deserializeJson() failed: ");
     Serial.println(error.c_str());
@@ -23,13 +23,18 @@ void receivedCallback(uint32_t from, String &msg) {
           forestState[treeNumber] = intState;
       
           //peer pressure
-          if (intState > DRAW && lastPartyTime < millis() - 45000) {
+          if (intState > DRAW && lastPartyTime < millis() - (PARTY_MILLISECONDS * 2)) {
             //Serial.printf("\nPARTY %i", from);
             // Serial.print("# "); Serial.print(from); Serial.print(" : "); Serial.println(msg);
             if (partyTreesCount() > 1 && forestState[0] < DRAW) {
-              changeState(intState);
-              pullTime = millis();  //would be better to math this out
-              lastPartyTime = millis();
+              //figure out how long to party
+              String thisTimer = doc["timer"];
+              if (isValidNumber(thisTimer)) {
+                pullTime = millis() - (PARTY_MILLISECONDS - thisTimer.toInt());
+                //pullTime = millis();  //would be better to math this out
+                lastPartyTime = pullTime;
+                changeState(intState);
+              }
             }
           }
         }
@@ -54,6 +59,11 @@ void broadcastStatus() {
   // Serialize the message
   DynamicJsonDocument doc(1024);
   doc["state"] = forestState[0];
+  if (forestState[0] > DRAW) {
+    long timerMilliseconds = PARTY_MILLISECONDS - (millis() - pullTime);
+    if (timerMilliseconds > PARTY_MILLISECONDS) timerMilliseconds = 0; //for strange condition
+    doc["timer"] = timerMilliseconds;
+  }
   String msg;
   serializeJson(doc, msg);  //
   mesh.sendBroadcast(msg);
