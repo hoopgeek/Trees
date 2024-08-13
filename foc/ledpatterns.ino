@@ -198,8 +198,9 @@ void patternColorful() {
     patternTime = 0;
   }
   if (patternTime > 0) {
+    byte thisColor = random8();
     for (int i = 0; i < NUM_LEDS; ++i) {
-      leds[i] = CHSV(random8(), 255, 255);
+      leds[i] = CHSV(thisColor, 255, 255);
     }
   } else {
     for (int i = 0; i < NUM_LEDS; ++i) {
