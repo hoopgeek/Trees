@@ -24,16 +24,19 @@ void receivedCallback(uint32_t from, String &msg) {
       
           //peer pressure
           if (intState > DRAW && lastPartyTime < millis() - (PARTY_MILLISECONDS * 2)) {
+      
             //Serial.printf("\nPARTY %i", from);
             // Serial.print("# "); Serial.print(from); Serial.print(" : "); Serial.println(msg);
             if (partyTreesCount() > 1 && forestState[0] < DRAW) {
               //figure out how long to party
               String thisTimer = doc["timer"];
               if (isValidNumber(thisTimer)) {
-                pullTime = millis() - (PARTY_MILLISECONDS - thisTimer.toInt());
-                //pullTime = millis();  //would be better to math this out
-                lastPartyTime = pullTime;
-                changeState(intState);
+                if (thisTimer.toInt() > 0 && thisTimer.toInt() <= 60000) {
+                  pullTime = millis() - (PARTY_MILLISECONDS - thisTimer.toInt());
+                  //pullTime = millis();  //would be better to math this out
+                  lastPartyTime = pullTime;
+                  changeState(intState);
+                }
               }
             }
           }
@@ -55,9 +58,13 @@ void updateAlive(uint32_t from) {
   }
 }
 
+void sendMessage() {
+  broadcastStatus();
+}
+
 void broadcastStatus() {
   // Serialize the message
-  DynamicJsonDocument doc(1024);
+  DynamicJsonDocument doc(256);
   doc["state"] = forestState[0];
   if (forestState[0] > DRAW) {
     long timerMilliseconds = PARTY_MILLISECONDS - (millis() - pullTime);
@@ -78,6 +85,13 @@ void newConnectionCallback(uint32_t nodeId) {
   //a tree has connected
   addNewTree(nodeId);
 }
+
+void droppedConnectionCallback(uint32_t nodeId) {
+  Serial.printf("--> startHere: New Connection, nodeId = %ul\n", nodeId);
+  //a tree has connected
+  removeTree(nodeId);
+}
+
 void addNewTree(uint32_t nodeId) {
   //do we already have this tree in the node table?
   bool gotTree = false;
@@ -97,6 +111,23 @@ void addNewTree(uint32_t nodeId) {
     forestNodes[nextSlot] = nodeId;
     forestLastAlive[nextSlot] = millis();
     Serial.printf("\nTree %i added @ %lu \n", nextSlot, nodeId);
+  }
+}
+
+void removeTree(uint32_t nodeId) {
+  //do we already have this tree in the node table?
+  bool gotTree = false;
+  int nextSlot = NUM_TREES + 1;
+  for (int i = 1; i < NUM_TREES; ++i) {
+    if (forestNodes[i] == nodeId) {
+      // Found the node, shift everything down.
+      forestState[i] = DEFAULT;
+      forestNodes[i] = 0;
+      forestLastAlive[i] = 0;
+    }
+
+    Serial.printf("\nTree %i removed @ %lu \n", i, nodeId);
+    break;
   }
 }
 void changedConnectionCallback() {

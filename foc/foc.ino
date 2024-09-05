@@ -5,12 +5,17 @@
 
 #define MESH_PREFIX "FoC"
 #define MESH_PASSWORD "JsFS)weI9J#*ij4F~jn="
+//#define MESH_PASSWORD "JsFS)weI9J#*"
 #define MESH_PORT 5555  // default port
+//#define MESH_PORT 7777  // default port
 
 Scheduler userScheduler;
 painlessMesh mesh;
 
-#define TREE_NUMBER 13  //each tree is numbered in order based on where it is located
+void sendMessage() ; // callback func
+Task sendTask( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
+
+#define TREE_NUMBER 26 //each tree is numbered in order based on where it is located
 #define DETECTINCHES 48
 
 //changed these so it didn't have to do math every time BRANCH_LENGTH and NUM_LEDS are used
@@ -99,9 +104,12 @@ void setup() {
   mesh.init(MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT);
   mesh.onReceive(&receivedCallback);
   mesh.onNewConnection(&newConnectionCallback);
+  mesh.onDroppedConnection(&droppedConnectionCallback);
   mesh.onChangedConnections(&changedConnectionCallback);
   mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
   mesh.initOTAReceive("TREE");
+  userScheduler.addTask( sendTask );
+  sendTask.enable();
 
   //init our forest arrays
   for (int i = 0; i < NUM_TREES; ++i) {
@@ -123,7 +131,7 @@ void setup() {
 
 void loop() {
 
-  mesh.update();
+ mesh.update();
 
   //set the clock offset incase it isn't set
   //if (clockOffset == 0) getClockOffset();
@@ -150,7 +158,8 @@ void loop() {
     if (forestState[0] == RAINBOWFOREST) patternRainbowForest();
     if (forestState[0] == ROUNDTHETREES) patternRoundTheTrees();
 
-    if (imAlone) darkForest(); //turn the tree dark if it's not connecting to others on the network
+    if (imAlone) offlineTree(); //turn the tree dark if it's not connecting to others on the network
+
   }
 
   tooManyLEDsFix();
@@ -166,12 +175,14 @@ void loop() {
       changeState(nextState(seed));  //this function will know what to do
       Serial.print("Start Party ");
       Serial.println(forestState[0]);
-      broadcastStatus();
+      //Monday: broadcastStatus();
       pullTime = millis();
       lastPartyTime = millis();
     }
-    //shut down after 60 seconds
-    if (forestState[0] > DRAW && (pullTime < millis() - PARTY_MILLISECONDS)) {
+    
+  
+  //shut down after 60 seconds
+    if (forestState[0] > DRAW && ((pullTime < millis() - PARTY_MILLISECONDS)) ) {
       Serial.println("Party Over");
       changeState(DEFAULT);
       clearForestActivity();
@@ -180,7 +191,7 @@ void loop() {
 
   //brodcast status update
   if (millis() - lastImAlive > 500) {
-    broadcastStatus();
+    //Monday: broadcastStatus();
     lastImAlive = millis();
   }
 
@@ -193,7 +204,7 @@ void loop() {
   //check to see if the forest is active every 500ms
   if (millis() - lastCheckForest > 500) {
     checkForest();
-    pruneForest();
+    // pruneForest(); // REMOVED AND REPLACED WITH DROPPED CALLBACK
     lastCheckForest = millis();
   }
 
@@ -206,29 +217,30 @@ void loop() {
   // *check for sensor detection every 200ms
   if (millis() - lastSensor > 200 && lastPartyTime < millis() - (PARTY_MILLISECONDS + REST_MILLISECONDS)) {
     byte sensors = gotSensor();
+    //sensors = 3;
     if (sensors != 0) {
-      Serial.print("Sensor ");
+      //Serial.print("Sensor ");
       if (sensors > 3) {
-        Serial.print(" 3");
+        //Serial.print(" 3");
         activeSensor = 3;
         sensors -= 4;
       }
       if (sensors > 1) {
-        Serial.print(" 2");
+        //Serial.print(" 2");
         activeSensor = 2;
         sensors -= 2;
       }
       if (sensors == 1) {
-        Serial.print(" 1");
+        //Serial.print(" 1");
         activeSensor = 1;
       }
-      Serial.println(" ");
+      //Serial.println(" ");
 
       if (forestState[0] == DEFAULT) {
         changeState(ACTIVATING);
       } else if (forestState[0] == ACTIVATING) {
         changeState(ACTIVATED);
-        broadcastStatus();
+        //Monday: broadcastStatus();
         startActiveTime = millis();
         lastActiveTime = millis();
       } else {
@@ -242,7 +254,7 @@ void loop() {
     if (forestState[0] == ACTIVATED && lastActiveTime < millis() - activeTimeout) {
       changeState(DEFAULT);
 
-      broadcastStatus();
+      //Monday: broadcastStatus();
     }
     lastSensor = millis();
   }

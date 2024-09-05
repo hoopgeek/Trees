@@ -75,7 +75,9 @@ void checkForest() {
   int numberOfLiveTrees = aliveTreesCount();
   
   //save the forest state to the 0 array position
-  if (numberOfActiveTrees >= numberOfLiveTrees && numberOfLiveTrees > 1) {
+  //temp changing to try to get the forest to activate, but reducing the required number of ativated trees to 5
+  if (numberOfActiveTrees >= (numberOfLiveTrees / 2) && numberOfActiveTrees > 1) {
+    //if (numberOfActiveTrees >= 5) {
     //party time, is this a new state?
     if (forestState[0] > ACTIVATED) {
       //we're already active
@@ -110,7 +112,8 @@ void clearForestActivity() {
 }
 
 int nextState(long seed) {
-  return (seed % FORESTPATTERENS) + 4;
+  int tmp = abs(seed % FORESTPATTERENS);
+  return tmp + 4;
 }
 
 boolean isValidNumber(String str) {

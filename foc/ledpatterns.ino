@@ -130,6 +130,16 @@ void blueSpruce() {
   }
 }
 
+//not conneted to other trees on the mesh,
+//light up bottom LEDs as a diagnostic
+
+void offlineTree() {
+  //light the bottom LEDs
+  leds[60] = CHSV(255, 0, 32);
+  leds[180] = CHSV(255, 0, 32);
+  leds[300] = CHSV(255, 0, 32);
+}
+
 //all off
 void darkForest() {
   fill_solid(leds, NUM_LEDS, CRGB::Black);
