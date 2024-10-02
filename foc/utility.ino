@@ -3,13 +3,13 @@ void changeState(int newState) {
   forestState[0] = newState;
 }
 
-//prune any tree from the forest that hasn't talked in 5 minutes
+// prune any tree from the forest that aren't in the node list
 void pruneForest() {
   if (millis() < 4000) return;
   //start at 1 because forestNodes[0] is me
   for (int i = 1; i < NUM_TREES; ++i) {
     if (forestNodes[i] != 0) {
-      if (forestLastAlive[i] < (millis() - 4000)) {
+      if(!isLiveNode(forestNodes[i])) {
         //he's dead Jim, remove the node
         //forestState[0] is me
         Serial.printf("\nTree %i pruned @ %lu \n", i, forestNodes[i]);
@@ -24,9 +24,9 @@ void pruneForest() {
 int activeTreesCount() {  
   int numberOfActiveTrees = 0;
   for (int i = 0; i < NUM_TREES; ++i) {
-    if (forestState[i] == ACTIVATED) {
+    if (forestState[i] >= ACTIVATED) {
       ++numberOfActiveTrees;
-      //Serial.println(i);
+      // Serial.println(i);
     }
   }
   return numberOfActiveTrees;
@@ -76,7 +76,8 @@ void checkForest() {
   
   //save the forest state to the 0 array position
   //temp changing to try to get the forest to activate, but reducing the required number of ativated trees to 5
-  if (numberOfActiveTrees >= (numberOfLiveTrees / 2) && numberOfActiveTrees > 1) {
+  //if (numberOfActiveTrees >= (numberOfLiveTrees / 2) && numberOfActiveTrees > 1) {
+    if (numberOfActiveTrees >= numberOfLiveTrees && numberOfActiveTrees > 3) {
     //if (numberOfActiveTrees >= 5) {
     //party time, is this a new state?
     if (forestState[0] > ACTIVATED) {

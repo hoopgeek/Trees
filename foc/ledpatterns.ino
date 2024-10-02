@@ -135,9 +135,9 @@ void blueSpruce() {
 
 void offlineTree() {
   //light the bottom LEDs
-  leds[60] = CHSV(255, 0, 32);
-  leds[180] = CHSV(255, 0, 32);
-  leds[300] = CHSV(255, 0, 32);
+  leds[60] = CHSV(0, 255, 64);
+  leds[180] = CHSV(0, 255, 64);
+  leds[300] = CHSV(0, 255, 64);
 }
 
 //all off

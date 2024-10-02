@@ -13,9 +13,9 @@ Scheduler userScheduler;
 painlessMesh mesh;
 
 void sendMessage() ; // callback func
-Task sendTask( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
+Task sendTask( TASK_SECOND * 3 , TASK_FOREVER, &sendMessage );
 
-#define TREE_NUMBER 26 //each tree is numbered in order based on where it is located
+#define TREE_NUMBER 3 //each tree is numbered in order based on where it is located
 #define DETECTINCHES 48
 
 //changed these so it didn't have to do math every time BRANCH_LENGTH and NUM_LEDS are used
@@ -63,7 +63,6 @@ long lastPartyTime = 0;
 
 long clockOffset = 0;
 long lastSensor = 0;
-long lastImAlive = 0;
 long lastPruneForest = 0;
 long lastCheckForest = 0;
 long lastStatus = 0;
@@ -137,7 +136,7 @@ void loop() {
   //if (clockOffset == 0) getClockOffset();
 
   // LED pattern
-  if (millis() < 1000 * 15) {
+  if (millis() < 1000 * 3) {
     // Serial.println(millis());
     testPattern();  //first 15 seconds
   } else {
@@ -189,17 +188,6 @@ void loop() {
     }
   }
 
-  //brodcast status update
-  if (millis() - lastImAlive > 500) {
-    //Monday: broadcastStatus();
-    lastImAlive = millis();
-  }
-
-  // //prune forest every 15 seconds
-  // if (millis() - lastPruneForest > 15000) {
-  //   pruneForest();
-  //   lastPruneForest = millis();
-  // }
 
   //check to see if the forest is active every 500ms
   if (millis() - lastCheckForest > 500) {
@@ -211,6 +199,19 @@ void loop() {
   //output status
   if (millis() - lastStatus > 2000) {
     Serial.printf("\n** Active: %i, Live: %i **\n", activeTreesCount(), aliveTreesCount());
+    // size_t i=0;
+    // SimpleList<uint32_t> nl = mesh.getNodeList();
+    // SimpleList<uint32_t>::iterator itr = nl.begin();
+    // while(itr != nl.end()) {
+ 
+    //     Serial.print(F("[+] MeshNode (Chip-ID) -> "));
+    //     Serial.println(*itr,DEC);
+      
+    //   itr++;
+    // }
+    
+     Serial.println(mesh.asNodeTree().toString());
+
     lastStatus = millis();
   }
 
