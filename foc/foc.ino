@@ -13,10 +13,11 @@ Scheduler userScheduler;
 painlessMesh mesh;
 
 void sendMessage() ; // callback func
-Task sendTask( TASK_SECOND * 3 , TASK_FOREVER, &sendMessage );
+Task sendTask( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
 
-#define TREE_NUMBER 3 //each tree is numbered in order based on where it is located
+#define TREE_NUMBER 6 //each tree is numbered in order based on where it is located
 #define DETECTINCHES 48
+#define TREE_DEBUG true
 
 //changed these so it didn't have to do math every time BRANCH_LENGTH and NUM_LEDS are used
 //also added 10 extra LEDs to NUM_LEDS since some of the strands were cut long
@@ -66,8 +67,10 @@ long lastSensor = 0;
 long lastPruneForest = 0;
 long lastCheckForest = 0;
 long lastStatus = 0;
+long lastDirty = 0;
 
 bool imAlone = true;
+bool freshState = false;
 
 #define NUM_TREES 25
 int forestState[NUM_TREES + 1];  //forestState[NUM_TREES] is the collective forest state, forestState[0] is me
@@ -167,13 +170,14 @@ void loop() {
 
   //trigger activation on 5 second network time
   long meshTime = mesh.getNodeTime();
-  if (meshTime > activateTime) {
+  //activate time will be 0 when the program first starts or when there's a meshTime problem with a peer presure.
+  if (meshTime > activateTime && activateTime != 0) {
     if (forestState[0] == DRAW) {
       //activate
-      long seed = meshTime / 10000000;
+      long seed = meshTime / 10000000;  //I think if we made this 60000000 we'd get better pattern coherance 
       changeState(nextState(seed));  //this function will know what to do
-      Serial.print("Start Party ");
-      Serial.println(forestState[0]);
+      if (TREE_DEBUG) Serial.print("Start Party ");
+      if (TREE_DEBUG) Serial.println(forestState[0]);
       //Monday: broadcastStatus();
       pullTime = millis();
       lastPartyTime = millis();
@@ -182,7 +186,7 @@ void loop() {
   
   //shut down after 60 seconds
     if (forestState[0] > DRAW && ((pullTime < millis() - PARTY_MILLISECONDS)) ) {
-      Serial.println("Party Over");
+      if (TREE_DEBUG) Serial.println("Party Over");
       changeState(DEFAULT);
       clearForestActivity();
     }
@@ -196,9 +200,15 @@ void loop() {
     lastCheckForest = millis();
   }
 
+  //trigger a send of the status every 15 seconds
+  if (millis() - lastDirty > 15000) {
+    freshState = true;
+    lastDirty = millis();
+  }
+
   //output status
   if (millis() - lastStatus > 2000) {
-    Serial.printf("\n** Active: %i, Live: %i **\n", activeTreesCount(), aliveTreesCount());
+    if (TREE_DEBUG) Serial.printf("\n** Active: %i, Live: %i **\n", activeTreesCount(), aliveTreesCount());
     // size_t i=0;
     // SimpleList<uint32_t> nl = mesh.getNodeList();
     // SimpleList<uint32_t>::iterator itr = nl.begin();
@@ -210,7 +220,7 @@ void loop() {
     //   itr++;
     // }
     
-     Serial.println(mesh.asNodeTree().toString());
+     if (TREE_DEBUG) Serial.println(mesh.asNodeTree().toString());
 
     lastStatus = millis();
   }

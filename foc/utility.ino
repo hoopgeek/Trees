@@ -1,6 +1,7 @@
 void changeState(int newState) {
-  Serial.printf("\State Change: %i => %i\n", forestState[0], newState);
+  if (TREE_DEBUG) Serial.printf("\State Change: %i => %i\n", forestState[0], newState);
   forestState[0] = newState;
+  freshState = true;
 }
 
 // prune any tree from the forest that aren't in the node list
@@ -12,7 +13,7 @@ void pruneForest() {
       if(!isLiveNode(forestNodes[i])) {
         //he's dead Jim, remove the node
         //forestState[0] is me
-        Serial.printf("\nTree %i pruned @ %lu \n", i, forestNodes[i]);
+        if (TREE_DEBUG) Serial.printf("\nTree %i pruned @ %lu \n", i, forestNodes[i]);
         //Serial.printf(" ... forestLastAlive[] %lu < %lu \n", forestLastAlive[i], millis()-300000);
         forestState[i] = 0;
         forestNodes[i] = 0;
