@@ -1,4 +1,6 @@
 #include <FastLED.h>
+
+#include <FastLED.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <painlessMesh.h>
@@ -15,7 +17,7 @@ painlessMesh mesh;
 void sendMessage() ; // callback func
 Task sendTask( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
 
-#define TREE_NUMBER 6 //each tree is numbered in order based on where it is located
+#define TREE_NUMBER 4 //each tree is numbered in order based on where it is located
 #define DETECTINCHES 48
 #define TREE_DEBUG true
 
@@ -25,7 +27,7 @@ Task sendTask( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
 #define BRANCH_LENGTH 120
 #define NUM_LEDS 370 
 #define PARTY_MILLISECONDS 60000 
-#define REST_MILLISECONDS 10000
+#define REST_MILLISECONDS 100
 
 #define DATA_PIN 23
 #define CLOCK_PIN 18
@@ -54,7 +56,7 @@ Task sendTask( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
 #define ECHO_PIN2 27
 #define ECHO_PIN3 25
 
-int activeTimeout = 25000;  //25 seconds to activate all the trees
+int activeTimeout = 600000;  //10 minutes to activate all the trees
 long startActiveTime = 0;
 long lastActiveTime = 0;
 int activeSensor = 1;  //must be 1, 2, or 3
@@ -81,6 +83,10 @@ CRGB leds[NUM_LEDS];
 // int offset = 0;
 byte masterHue;
 long patternTime = 0;
+byte proximity = 100;
+byte maxSensor[3] = {20,20,20};
+byte lastSensorValue = 100;
+int currentSensor = 0;
 
 void setup() {
 
@@ -143,9 +149,9 @@ void loop() {
     // Serial.println(millis());
     testPattern();  //first 15 seconds
   } else {
-
-    if (forestState[0] <= ACTIVATING) blueSpruce();
-    if (forestState[0] == ACTIVATED) activePattern();
+    if (forestState[0] == DEFAULT ) blueSpruce();
+    if (forestState[0] == ACTIVATING) activePattern();
+    if (forestState[0] == ACTIVATED) activedPattern();
     if (forestState[0] == DRAW) darkForest();
     
     if (forestState[0] == ROTATE) patternRotate();
@@ -228,45 +234,115 @@ void loop() {
   // *check for sensor detection every 200ms
   if (millis() - lastSensor > 200 && lastPartyTime < millis() - (PARTY_MILLISECONDS + REST_MILLISECONDS)) {
     byte sensors = gotSensor();
-    //sensors = 3;
-    if (sensors != 0) {
-      //Serial.print("Sensor ");
-      if (sensors > 3) {
-        //Serial.print(" 3");
-        activeSensor = 3;
-        sensors -= 4;
-      }
-      if (sensors > 1) {
-        //Serial.print(" 2");
-        activeSensor = 2;
-        sensors -= 2;
-      }
-      if (sensors == 1) {
-        //Serial.print(" 1");
-        activeSensor = 1;
-      }
-      //Serial.println(" ");
-
-      if (forestState[0] == DEFAULT) {
-        changeState(ACTIVATING);
-      } else if (forestState[0] == ACTIVATING) {
-        changeState(ACTIVATED);
-        //Monday: broadcastStatus();
-        startActiveTime = millis();
-        lastActiveTime = millis();
-      } else {
-        lastActiveTime = millis();
-      }
-
+    
+    //running average to smooth a little.  
+    // if (lastSensorValue > sensors) {
+    //   sensors = (lastSensorValue - sensors) / 2 + sensors;
+    // } else {
+    //   sensors = sensors - (sensors - lastSensorValue) / 2;
+    // }
+   // if (proximity > 60) proximity = 0;  // i don't know. it's late and i give up
+    if (sensors == 0) {
+      //Serial.print("*proximity = "); Serial.println(proximity);
+       //so this will count higher than the sensor range in most cases, and leave the bottom led falshing for a moment, 
+       //but I kinda like that extra bit of activation when someone steps away before going back to default
+       //this will keep tripping when no input, but changestate() will handel that and return
+       if (proximity > 90) {
+         //we want to make sure to only go back to defaut here if the in the activating state.  
+         //if it's activated then don't touch the state, it had to be taken back to default by forest activation or timeout
+         if (forestState[0] == ACTIVATING) {
+          changeState(DEFAULT);
+         }
+         proximity = 100;
+       } else {
+         if (proximity != 100) proximity = proximity + 3;
+       }
+     
     } else {
-      if (forestState[0] == ACTIVATING) changeState(DEFAULT);
-    }
-    //expire activation
-    if (forestState[0] == ACTIVATED && lastActiveTime < millis() - activeTimeout) {
-      changeState(DEFAULT);
+      //reactivation - with debounce - it can run a couple loops through the sensor = 0 and not have to start maxSensor
+      //the point of this is to bring it down from growing to 100
+      //actually, it was easier than that.  We just want to put a cap on the proximity to start at the max range
+      if (proximity > maxSensor[currentSensor]) {
+        proximity = maxSensor[currentSensor];
+      }
+      // if (lastSensorValue != proximity) {
+      //   //when reactivated start at max sensor
+      //   proximity = maxSensor[currentSensor];
+      // }
+      
+      //if we have a sensor input and we're in default, then start activiting and set the proximity from 100 to the current sensor input
+      if (forestState[0] == DEFAULT) {
+        if (proximity == 100) proximity = sensors;  //jic, we don't want to mess with proximity unless it needs pulled off the 100
+        changeState(ACTIVATING);
+        Serial.println("*** ACTIVATING ***");
+      } 
 
-      //Monday: broadcastStatus();
+
+     // sensors = (lastSensor + sensors) / 2;
+
+    
+      //sensors = 3;
+      if (sensors > proximity && sensors < 60) {
+        proximity += 2;
+      } else {
+        if (proximity >= 2)
+          proximity -= 2;
+      }
+      Serial.print("sensors = "); Serial.println(sensors);
+      Serial.print("proximity = "); Serial.println(proximity);
+      Serial.print("state = "); Serial.println(forestState[0]);
+
+      if (proximity <= 18 && sensors > 0) {
+        changeState(ACTIVATED);
+        startActiveTime = millis();
+        proximity = 100; //reset it for next time
+        lastSensorValue = 100; //reset it for next time
+        lastActiveTime = millis();
+      }
+      lastSensorValue = proximity;
     }
+    
+
+    //proximity = sensors;
+    // if (sensors != 0) {
+    //   //Serial.print("Sensor ");
+    //   // if (sensors > 3) {
+    //   //   //Serial.print(" 3");
+    //   //   activeSensor = 3;
+    //   //   sensors -= 4;
+    //   // }
+    //   // if (sensors > 1) {
+    //   //   //Serial.print(" 2");
+    //   //   activeSensor = 2;
+    //   //   sensors -= 2;
+    //   // }
+    //   // if (sensors == 1) {
+    //   //   //Serial.print(" 1");
+    //   //   activeSensor = 1;
+    //   // }
+    //   //Serial.println(" ");
+    //   //proximity = sensors;
+
+    //   // if (forestState[0] == DEFAULT) {
+    //   //   changeState(ACTIVATING);
+    //   // } else if (forestState[0] == ACTIVATING) {
+    //   //   changeState(ACTIVATED);
+    //   //   //Monday: broadcastStatus();
+    //   //   startActiveTime = millis();
+    //   //   lastActiveTime = millis();
+    //   // } else {
+    //   //   lastActiveTime = millis();
+    //   // }
+
+    // } else {
+    //   if (forestState[0] == ACTIVATING) changeState(DEFAULT);
+    // }
+    // //expire activation
+    // if (forestState[0] == ACTIVATED && lastActiveTime < millis() - activeTimeout) {
+    //   changeState(DEFAULT);
+
+    //   //Monday: broadcastStatus();
+    // }
     lastSensor = millis();
   }
 

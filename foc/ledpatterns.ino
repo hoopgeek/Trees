@@ -64,13 +64,29 @@ uint16_t cycleTree(uint16_t time, uint8_t spread) {
     0L);
 }
 
+void activedPattern() {
+  int offset = (mesh.getNodeTime() / 50000L) % 60;
+  for (int i = 0; i < 60; ++i) {
+    setAllBranchLed(i, CHSV(floor(256 / 60) * ((offset + i) % 60) , 255, 255));
+  }
+}
+
 void activePattern() {
-  if (millis() - startActiveTime < 3000) {
+  //if (millis() - startActiveTime < 3000) {
+  if (proximity >= 20) {
     //start with a base coat of the default blue spruce
-    blueSpruce();
+    //5-15/2025 blueSpruce();
+    clearLEDs();
     //layer on growing up the tree for 3 seconds on the activated side
     //do the grow up tree routine
-    for (int i = 0; i < (millis() - startActiveTime) / 50; ++i) {
+    //changed this to show proximity
+    //for (int i = 0; i < (millis() - startActiveTime) / 50; ++i) {
+    byte ledsUpTree = 0;
+    if (proximity > 18 && proximity <= maxSensor[currentSensor]) {
+      ledsUpTree = ((maxSensor[currentSensor] - proximity) * 60/(maxSensor[currentSensor] - 18));
+      //Serial.print("ledsUpTree = "); Serial.println(ledsUpTree);
+    } 
+    for (int i = 0; i < ledsUpTree; ++i) {
       setAllBranchLed(59-i, CHSV(floor(256 / 60) * i, 255, 255));
       // if (activeSensor == 1 || activeSensor == 2) {
         // setBranchLed(1, 59-i, CHSV(floor(256 / 60) * i, 255, 255));
@@ -84,7 +100,8 @@ void activePattern() {
     }
     //twinkle the leading LED
     if (random8(3) == 1) {
-      int lastLED = 59 - ((millis() - startActiveTime) / 50 - 1);
+      //int lastLED = 59 - ((millis() - startActiveTime) / 50 - 1);
+      int lastLED = 59 - ledsUpTree;
       if (lastLED < 0) lastLED = 0;  //just in case
         setAllBranchLed(lastLED, CRGB::White);  //twinkle the leading LED
       // if (activeSensor == 1 || activeSensor == 2) {
@@ -128,6 +145,12 @@ void blueSpruce() {
       leds[i] = CHSV(134, 255, 32);  //blueish
     }
   }
+}
+
+void clearLEDs() {
+ for (int i = 0; i < NUM_LEDS; ++i) {
+   leds[i] = CRGB::Black;
+ }
 }
 
 //not conneted to other trees on the mesh,

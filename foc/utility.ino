@@ -1,4 +1,5 @@
 void changeState(int newState) {
+  if (forestState[0] == newState) return;
   if (TREE_DEBUG) Serial.printf("\State Change: %i => %i\n", forestState[0], newState);
   forestState[0] = newState;
   freshState = true;

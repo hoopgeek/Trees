@@ -8,7 +8,10 @@ byte gotSensor() {
 
   // 1: sensor 1, 2: sensor 2, 3: sensor 1 & 2
   // 4: sensor 3, 5: sensor 1 & 3, 6: sensor 2 & 3, 7: all
-  byte results = 0;
+  byte results = 100;
+
+
+//TODO: Change mack to 3!
 
   for (int i = 0; i < 3; ++i) {
 
@@ -35,18 +38,41 @@ byte gotSensor() {
 
     inches = pulse_width / 148.0;
     //  Serial.println(pulse_width);
-    // Serial.println(inches);
+     //Serial.print("inches = ");Serial.println(inches);
 
-    if (inches < DETECTINCHES && inches > 1) {
-      if (i == 0) results += 1;
-      if (i == 1) results += 2;
-      if (i == 2) results += 4;
-      //Serial.println("*** DETECTION ***");
-    } else {
-      //Serial.println("");
-      //return false;
-    }
+    if (inches < 72 && inches > 1) {
+      if (inches - 12 > maxSensor[i]) {
+        maxSensor[i] = inches - 12;
+        Serial.print("Max Sensor "); Serial.print(i+1); Serial.print(" = "); Serial.println(maxSensor[i]);
+      } else {
+        //Serial.print("Sensor "); Serial.print(i+1); Serial.print(" = "); Serial.print(results);
+        //if this sensor is closer than the others then set the result inches we're returning and the currentSensor index 
+        //that's used in the ledpatters to compute % up the tree
+        
+        //if the maxSensor for this sensor is 20 then the sensor isn't working right and we need to ignore it
+        //greater than 20 we're good
+        if (maxSensor[i] > 20) {
+          if (results > inches) {
+            results = inches;
+            currentSensor = i;
+          }
+        }
+        //Serial.print("- "); Serial.println(results);
+        
+        //Serial.println("*** DETECTION ***");
+      }
+    } 
+    
   }
-  // Serial.println(results);
+  //Serial.println(results);
+  //reset the maxInches every once (about every 3 minutes) in a while incase something changes about fixed objects in front of the sensor
+  if (random(1000) == 5) {
+    maxSensor[0] = 20;
+    maxSensor[1] = 20;
+    maxSensor[2] = 20;
+    Serial.println("Sensor Reset");
+  }
+  //Serial.println(results);
+  if (results == 100) results = 0;
   return results;
 }
