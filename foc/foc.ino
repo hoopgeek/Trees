@@ -17,7 +17,7 @@ painlessMesh mesh;
 void sendMessage() ; // callback func
 Task sendTask( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
 
-#define TREE_NUMBER 4 //each tree is numbered in order based on where it is located
+#define TREE_NUMBER 7 //each tree is numbered in order based on where it is located
 #define DETECTINCHES 48
 #define TREE_DEBUG true
 
@@ -56,7 +56,7 @@ Task sendTask( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
 #define ECHO_PIN2 27
 #define ECHO_PIN3 25
 
-int activeTimeout = 600000;  //10 minutes to activate all the trees
+long activeTimeout = 600000;  //10 minutes to activate all the trees
 long startActiveTime = 0;
 long lastActiveTime = 0;
 int activeSensor = 1;  //must be 1, 2, or 3
@@ -213,7 +213,7 @@ void loop() {
   }
 
   //output status
-  if (millis() - lastStatus > 2000) {
+  if (millis() - lastStatus > 15000) {
     if (TREE_DEBUG) Serial.printf("\n** Active: %i, Live: %i **\n", activeTreesCount(), aliveTreesCount());
     // size_t i=0;
     // SimpleList<uint32_t> nl = mesh.getNodeList();
@@ -338,11 +338,15 @@ void loop() {
     //   if (forestState[0] == ACTIVATING) changeState(DEFAULT);
     // }
     // //expire activation
-    // if (forestState[0] == ACTIVATED && lastActiveTime < millis() - activeTimeout) {
-    //   changeState(DEFAULT);
+    if (millis() > activeTimeout) {
+      if (forestState[0] == ACTIVATED && lastActiveTime < millis() - activeTimeout) {
+        Serial.print("lastActiveTime = "); Serial.println(lastActiveTime);
+        Serial.print("millis() - activeTimeout = "); Serial.println(millis() - activeTimeout);
+        changeState(DEFAULT);
 
-    //   //Monday: broadcastStatus();
-    // }
+      //   //Monday: broadcastStatus();
+      }
+    }
     lastSensor = millis();
   }
 
