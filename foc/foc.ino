@@ -17,7 +17,7 @@ painlessMesh mesh;
 void sendMessage() ; // callback func
 Task sendTask( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
 
-#define TREE_NUMBER 7 //each tree is numbered in order based on where it is located
+#define TREE_NUMBER 25 //each tree is numbered in order based on where it is located
 #define DETECTINCHES 48
 #define TREE_DEBUG true
 
@@ -84,7 +84,7 @@ CRGB leds[NUM_LEDS];
 byte masterHue;
 long patternTime = 0;
 byte proximity = 100;
-byte maxSensor[3] = {20,20,20};
+byte maxSensor[3] = {40,40,40};
 byte lastSensorValue = 100;
 int currentSensor = 0;
 
@@ -288,9 +288,9 @@ void loop() {
         if (proximity >= 2)
           proximity -= 2;
       }
-      Serial.print("sensors = "); Serial.println(sensors);
-      Serial.print("proximity = "); Serial.println(proximity);
-      Serial.print("state = "); Serial.println(forestState[0]);
+      // Serial.print("sensors = "); Serial.println(sensors);
+      // Serial.print("proximity = "); Serial.println(proximity);
+      // Serial.print("state = "); Serial.println(forestState[0]);
 
       if (proximity <= 18 && sensors > 0) {
         changeState(ACTIVATED);

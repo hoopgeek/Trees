@@ -67,9 +67,9 @@ byte gotSensor() {
   //Serial.println(results);
   //reset the maxInches every once (about every 3 minutes) in a while incase something changes about fixed objects in front of the sensor
   if (random(1000) == 5) {
-    maxSensor[0] = 20;
-    maxSensor[1] = 20;
-    maxSensor[2] = 20;
+    maxSensor[0] = 40;
+    maxSensor[1] = 40;
+    maxSensor[2] = 40;
     Serial.println("Sensor Reset");
   }
   //Serial.println(results);
