@@ -17,7 +17,7 @@ painlessMesh mesh;
 void sendMessage() ; // callback func
 Task sendTask( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
 
-#define TREE_NUMBER 25 //each tree is numbered in order based on where it is located
+#define TREE_NUMBER 5 //each tree is numbered in order based on where it is located
 #define DETECTINCHES 48
 #define TREE_DEBUG true
 
@@ -26,8 +26,8 @@ Task sendTask( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
 #define SIDE_LENGTH 60
 #define BRANCH_LENGTH 120
 #define NUM_LEDS 370 
-#define PARTY_MILLISECONDS 60000 
-#define REST_MILLISECONDS 100
+#define PARTY_MILLISECONDS 40000 
+#define REST_MILLISECONDS 10
 
 #define DATA_PIN 23
 #define CLOCK_PIN 18
@@ -56,7 +56,7 @@ Task sendTask( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
 #define ECHO_PIN2 27
 #define ECHO_PIN3 25
 
-long activeTimeout = 600000;  //10 minutes to activate all the trees
+long activeTimeout = 240000;  //4 minutes to activate all the trees
 long startActiveTime = 0;
 long lastActiveTime = 0;
 int activeSensor = 1;  //must be 1, 2, or 3
@@ -159,12 +159,12 @@ void loop() {
     if (forestState[0] == STROBE) patternStrobe();
     if (forestState[0] == COLORFUL) patternColorful();
     if (forestState[0] == FIRE) patternFire();
-    if (forestState[0] == GRADIENTWIPE) patternGradientWipe();
+    if (forestState[0] == GRADIENTWIPE) patternGradientWipe(); 
     if (forestState[0] == SWINGINGLIGHTS) patternSwingingLights();
-    if (forestState[0] == PSYCHEDELLIC) patternPsychedellic();
+    if (forestState[0] == PSYCHEDELLIC) patternSingleTree();  
     if (forestState[0] == RACINGLIGHTS) patternRacingLights();
-    if (forestState[0] == RAINBOWFOREST) patternRainbowForest();
-    if (forestState[0] == ROUNDTHETREES) patternRoundTheTrees();
+    if (forestState[0] == RAINBOWFOREST) patternSpinLegs(); //patternRainbowForest();
+    if (forestState[0] == ROUNDTHETREES)  patternWave(); //patternRoundTheTrees();
 
     if (imAlone) offlineTree(); //turn the tree dark if it's not connecting to others on the network
 
@@ -180,7 +180,7 @@ void loop() {
   if (meshTime > activateTime && activateTime != 0) {
     if (forestState[0] == DRAW) {
       //activate
-      long seed = meshTime / 10000000;  //I think if we made this 60000000 we'd get better pattern coherance 
+      long seed = meshTime / 30000000;  //I think if we made this 60000000 we'd get better pattern coherance (71 minute rollover)
       changeState(nextState(seed));  //this function will know what to do
       if (TREE_DEBUG) Serial.print("Start Party ");
       if (TREE_DEBUG) Serial.println(forestState[0]);
@@ -281,18 +281,27 @@ void loop() {
      // sensors = (lastSensor + sensors) / 2;
 
     
-      //sensors = 3;
-      if (sensors > proximity && sensors < 60) {
-        proximity += 2;
+      // changed this on 9/7 to make it trip faster and without having ot get closer to it
+      // if (sensors > proximity && sensors < 60) {
+      //   proximity += 2;
+      // } else {
+      //   if (proximity >= 2)
+      //     proximity -= 2;
+      // }
+
+      if (sensors > (maxSensor[currentSensor] - 12) && sensors < 60) {
+        proximity += 4;
       } else {
-        if (proximity >= 2)
-          proximity -= 2;
+        if (proximity >= 4)
+          proximity -= 4;
       }
+
       // Serial.print("sensors = "); Serial.println(sensors);
       // Serial.print("proximity = "); Serial.println(proximity);
       // Serial.print("state = "); Serial.println(forestState[0]);
 
       if (proximity <= 18 && sensors > 0) {
+      //if (proximity <= (maxSensor[currentSensor] - 12) && sensors > 0) {
         changeState(ACTIVATED);
         startActiveTime = millis();
         proximity = 100; //reset it for next time

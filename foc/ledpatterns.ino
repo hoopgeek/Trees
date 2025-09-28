@@ -67,7 +67,7 @@ uint16_t cycleTree(uint16_t time, uint8_t spread) {
 void activedPattern() {
   int offset = (mesh.getNodeTime() / 50000L) % 60;
   for (int i = 0; i < 60; ++i) {
-    setAllBranchLed(i, CHSV(floor(256 / 60) * ((offset + i) % 60) , 255, 255));
+    setAllBranchLed(i, CHSV(floor(256 / 60) * ((offset + i) % 60) , 255, 128));
   }
 }
 
@@ -200,7 +200,7 @@ void patternSparkle() {
 
 //tree strobe
 void patternStrobe() {
-  if (random8(100) == 1 && patternTime == 0) {
+  if (random8(20) == 1 && patternTime == 0) {
     patternTime = millis();
   }
   if (millis() > patternTime + 360) {
@@ -224,7 +224,7 @@ void patternStrobe() {
 
 //colorful
 void patternColorful() {
-  if (random8(100) == 1 && patternTime == 0) {
+  if (random8(50) == 1 && patternTime == 0) {
     patternTime = millis();
   }
   if (millis() > patternTime + 200) {
@@ -437,4 +437,72 @@ void patternRoundTheTrees() {
         255,
         brightness / 256));
   }
+}
+
+//Select current tree for one tree at a time patterns
+void patternSingleTree() {
+  //fallback to default if msPerTree is not set
+  int msPerTree = 1000;
+  
+  //get current tree
+  const long t = theClock() / msPerTree;
+  const int currentTree = t % NUM_TREES + 1;
+
+  //Hue advances by 1 each time the new tree lights
+  const int hue = t % 256;
+
+  if (currentTree == TREE_NUMBER) {
+    // It's this tree's turn: light the whole tree with current hue
+    fill_solid(leds, NUM_LEDS, CHSV(hue, 255, 255));
+  } else {
+    // Not our turn: stay dark
+    darkForest();
+  }
+}
+
+//Spin the legs of the trees
+void patternSpinLegs() {
+  //fallback to default if msPerLeg is not set
+  int msPerLeg = 1000;
+
+  //get the current leg
+  const long t = theClock() / msPerLeg;
+  const int currentLeg = t % 3;
+
+  //Hue advances by 1 each time the new leg lights
+  const byte hue = currentLeg * 256 / 3;
+
+  for (int i = 0; i < SIDE_LENGTH; ++i) {
+    setBranchLed(currentLeg, i, CHSV(hue, 255, 255));
+  }
+}
+
+//Make a wave move through the forest
+void patternWave() {
+  //there will be a center LED from 1 to 60
+  const long t = theClock();
+  const byte hue = (t / 10) % 256;  
+  int point = (t / 8) % 120; // = about 1 second from top to bottom of tree 
+  clearLEDs();
+  if (point >= 50) {
+    point = 99 - point;
+  }
+  setAllBranchLed(point, CHSV(hue, 255, 255));
+
+  // for (int i = 1; i < 10; ++i) {
+
+  // }
+
+  //move out from cnter in both directions with a fade
+  for (int i = 1; i < 10; ++i) {
+    int pp = point + i + 5;
+    if (pp >= 60 ) pp -= 60;
+    int pn = point + 5 - i;
+    if (pn < 0) pn += 60;
+
+    setAllBranchLed(pp, CHSV(hue, 255, 255 - i * 45));
+    setAllBranchLed(pn, CHSV(hue, 255, 255 - i * 45));
+
+  }
+
 }
