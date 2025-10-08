@@ -116,6 +116,11 @@ void clearForestActivity() {
 
 int nextState(long seed) {
   int tmp = abs(seed % FORESTPATTERENS);
+  
+  Serial.print("Seed=");
+  Serial.print(seed);
+  Serial.print(" nextState=");
+  Serial.println(tmp +4);
   return tmp + 4;
 }
 

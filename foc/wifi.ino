@@ -196,5 +196,7 @@ void changedConnectionCallback() {
   updateTrees();
 }
 void nodeTimeAdjustedCallback(int32_t offset) {
-  if (TREE_DEBUG) Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(), offset);
+  float ms = offset / 1000.0f;
+  if (TREE_DEBUG) Serial.printf("Adjusted time %lu us  (offset %.3f ms)\n",
+                (unsigned long)mesh.getNodeTime(), ms);
 }

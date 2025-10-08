@@ -46,7 +46,7 @@ inline uint16_t randomBranchTime(int branch) {
  * @returns The theta value. Range [0, 65536]
  */
 inline uint16_t treeTheta(uint16_t time) {
-  return (((TREE_NUMBER - 1) * MAX_UINT16) / min(aliveTreesCount(), 1) - time) % MAX_UINT16;
+  return (((TREE_NUMBER - 1) * MAX_UINT16) / min(max(aliveTreesCount(),1), 1) - time) % MAX_UINT16; //added max() to prevent divide by zero
 }
 
 /**
@@ -471,7 +471,7 @@ void patternSpinLegs() {
 
   //Hue advances by 1 each time the new leg lights
   const byte hue = currentLeg * 256 / 3;
-
+  clearLEDs();
   for (int i = 0; i < SIDE_LENGTH; ++i) {
     setBranchLed(currentLeg, i, CHSV(hue, 255, 255));
   }

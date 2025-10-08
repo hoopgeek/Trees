@@ -11,59 +11,61 @@ byte gotSensor() {
   byte results = 100;
 
 
-//TODO: Change mack to 3!
-
-  for (int i = 0; i < 3; ++i) {
-
-    digitalWrite(13, LOW);
-    delayMicroseconds(2);
-
-    digitalWrite(trigPin[i], HIGH);
-    delayMicroseconds(10);
-    digitalWrite(trigPin[i], LOW);
-
-    // Wait for pulse on echo pin
-    //TODO: need to put a timeout limit on this incase the sensor breaks of is dissconnected.
-    // commented because it locks up the program when there's no sensor attached.  while ( digitalRead(ECHO_PIN) == 0 );
-
-    unsigned long pulse_width;
-    float cm;
-    float inches;
+  static uint8_t idx = 0;
+  uint8_t i = idx;
+  idx = (idx + 1) % 3;
 
 
-    // Measure how long the echo pin was held high (pulse width)
-    // Note: the micros() counter will overflow after ~70 min
 
-    pulse_width = pulseIn(echoPin[i], HIGH, 15000);
+  digitalWrite(13, LOW);
+  delayMicroseconds(2);
 
-    inches = pulse_width / 148.0;
-    //  Serial.println(pulse_width);
-     //Serial.print("inches = ");Serial.println(inches);
+  digitalWrite(trigPin[i], HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin[i], LOW);
 
-    if (inches < 72 && inches > 1) {
-      if (inches - 12 > maxSensor[i]) {
-        maxSensor[i] = inches - 12;
-        Serial.print("Max Sensor "); Serial.print(i+1); Serial.print(" = "); Serial.println(maxSensor[i]);
-      } else {
-        //Serial.print("Sensor "); Serial.print(i+1); Serial.print(" = "); Serial.print(results);
-        //if this sensor is closer than the others then set the result inches we're returning and the currentSensor index 
-        //that's used in the ledpatters to compute % up the tree
-        
-        //if the maxSensor for this sensor is 20 then the sensor isn't working right and we need to ignore it
-        //greater than 20 we're good
-        if (maxSensor[i] > 20) {
-          if (results > inches) {
-            results = inches;
-            currentSensor = i;
-          }
+  // Wait for pulse on echo pin
+  //TODO: need to put a timeout limit on this incase the sensor breaks of is dissconnected.
+  // commented because it locks up the program when there's no sensor attached.  while ( digitalRead(ECHO_PIN) == 0 );
+
+  unsigned long pulse_width;
+  float cm;
+  float inches;
+
+
+  // Measure how long the echo pin was held high (pulse width)
+  // Note: the micros() counter will overflow after ~70 min
+
+  pulse_width = pulseIn(echoPin[i], HIGH, 8000);
+
+  inches = pulse_width / 148.0;
+  //  Serial.println(pulse_width);
+    //Serial.print("inches = ");Serial.println(inches);
+
+  if (inches < 72 && inches > 1) {
+    if (inches - 12 > maxSensor[i]) {
+      maxSensor[i] = inches - 12;
+      Serial.print("Max Sensor "); Serial.print(i+1); Serial.print(" = "); Serial.println(maxSensor[i]);
+    } else {
+      //Serial.print("Sensor "); Serial.print(i+1); Serial.print(" = "); Serial.print(results);
+      //if this sensor is closer than the others then set the result inches we're returning and the currentSensor index 
+      //that's used in the ledpatters to compute % up the tree
+      
+      //if the maxSensor for this sensor is 20 then the sensor isn't working right and we need to ignore it
+      //greater than 20 we're good
+      if (maxSensor[i] > 20) {
+        if (results > inches) {
+          results = inches;
+          currentSensor = i;
         }
-        //Serial.print("- "); Serial.println(results);
-        
-        //Serial.println("*** DETECTION ***");
       }
-    } 
+      //Serial.print("- "); Serial.println(results);
+      
+      //Serial.println("*** DETECTION ***");
+    }
+  } 
     
-  }
+  
   //Serial.println(results);
   //reset the maxInches every once (about every 3 minutes) in a while incase something changes about fixed objects in front of the sensor
   if (random(1000) == 5) {

@@ -17,7 +17,7 @@ painlessMesh mesh;
 void sendMessage() ; // callback func
 Task sendTask( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
 
-#define TREE_NUMBER 5 //each tree is numbered in order based on where it is located
+#define TREE_NUMBER 12 //each tree is numbered in order based on where it is located
 #define DETECTINCHES 48
 #define TREE_DEBUG true
 
@@ -116,6 +116,9 @@ void setup() {
   mesh.onChangedConnections(&changedConnectionCallback);
   mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
   mesh.initOTAReceive("TREE");
+  if (TREE_NUMBER == 12) mesh.setRoot(true);
+  // On *all* nodes (including the root):
+  mesh.setContainsRoot(true);
   userScheduler.addTask( sendTask );
   sendTask.enable();
 
@@ -172,7 +175,13 @@ void loop() {
 
   tooManyLEDsFix();
 
-  FastLED.show();
+  static uint32_t lastFrame = 0;
+  if (millis() - lastFrame >= 16) { // ~60 FPS
+    FastLED.show();
+    lastFrame = millis();
+  }
+
+
 
   //trigger activation on 5 second network time
   long meshTime = mesh.getNodeTime();
@@ -231,8 +240,8 @@ void loop() {
     lastStatus = millis();
   }
 
-  // *check for sensor detection every 200ms
-  if (millis() - lastSensor > 200 && lastPartyTime < millis() - (PARTY_MILLISECONDS + REST_MILLISECONDS)) {
+  // *check for sensor detection every 100ms
+  if (millis() - lastSensor > 100 && lastPartyTime < millis() - (PARTY_MILLISECONDS + REST_MILLISECONDS)) {
     byte sensors = gotSensor();
     
     //running average to smooth a little.  
@@ -255,7 +264,7 @@ void loop() {
          }
          proximity = 100;
        } else {
-         if (proximity != 100) proximity = proximity + 3;
+         if (proximity != 100) proximity = proximity + 1;
        }
      
     } else {
@@ -290,10 +299,10 @@ void loop() {
       // }
 
       if (sensors > (maxSensor[currentSensor] - 12) && sensors < 60) {
-        proximity += 4;
+        proximity += 5;
       } else {
-        if (proximity >= 4)
-          proximity -= 4;
+        if (proximity >= 5)
+          proximity -= 5;
       }
 
       // Serial.print("sensors = "); Serial.println(sensors);
