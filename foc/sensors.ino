@@ -36,7 +36,7 @@ byte gotSensor() {
   // Measure how long the echo pin was held high (pulse width)
   // Note: the micros() counter will overflow after ~70 min
 
-  pulse_width = pulseIn(echoPin[i], HIGH, 8000);
+  pulse_width = pulseIn(echoPin[i], HIGH, 9000);
 
   inches = pulse_width / 148.0;
   //  Serial.println(pulse_width);
@@ -69,9 +69,9 @@ byte gotSensor() {
   //Serial.println(results);
   //reset the maxInches every once (about every 3 minutes) in a while incase something changes about fixed objects in front of the sensor
   if (random(1000) == 5) {
-    maxSensor[0] = 40;
-    maxSensor[1] = 40;
-    maxSensor[2] = 40;
+    maxSensor[0] = 60;
+    maxSensor[1] = 60;
+    maxSensor[2] = 60;
     Serial.println("Sensor Reset");
   }
   //Serial.println(results);

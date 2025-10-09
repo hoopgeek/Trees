@@ -1,9 +1,12 @@
-#include <FastLED.h>
 
 #include <FastLED.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <painlessMesh.h>
+#include <WebServer.h>
+#include <WebSocketsServer.h>
+#include <ESPmDNS.h>
+#include <esp_wifi.h>
 
 #define MESH_PREFIX "FoC"
 #define MESH_PASSWORD "JsFS)weI9J#*ij4F~jn="
@@ -17,7 +20,11 @@ painlessMesh mesh;
 void sendMessage() ; // callback func
 Task sendTask( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
 
-#define TREE_NUMBER 12 //each tree is numbered in order based on where it is located
+// Forward declarations for ws_portal functions
+void wsPortalBegin(const char* title = "painlessMesh Viewer");
+void wsPortalUpdate();
+
+#define TREE_NUMBER 11 //each tree is numbered in order based on where it is located
 #define DETECTINCHES 48
 #define TREE_DEBUG true
 
@@ -84,7 +91,7 @@ CRGB leds[NUM_LEDS];
 byte masterHue;
 long patternTime = 0;
 byte proximity = 100;
-byte maxSensor[3] = {40,40,40};
+byte maxSensor[3] = {60,60,60};
 byte lastSensorValue = 100;
 int currentSensor = 0;
 
@@ -106,7 +113,7 @@ void setup() {
   //  FastLED.addLeds<SK9822, DATA_PIN, CLOCK_PIN, BGR>(leds, NUM_LEDS);
 
   //This is where the power is regulated.  These pebble lights are kinda weird, so it will be some trial an error....
-  FastLED.setMaxPowerInVoltsAndMilliamps(5, 800);
+  FastLED.setMaxPowerInVoltsAndMilliamps(5, 1200);
 
   mesh.setDebugMsgTypes(ERROR | STARTUP);
   mesh.init(MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT);
@@ -121,6 +128,15 @@ void setup() {
   mesh.setContainsRoot(true);
   userScheduler.addTask( sendTask );
   sendTask.enable();
+  if (TREE_NUMBER == 12) {
+    // Configure WiFi power settings BEFORE starting web portal
+    WiFi.setSleep(false);            // Disable WiFi sleep (Arduino API)
+    esp_wifi_set_ps(WIFI_PS_NONE);   // Disable power saving (ESP-IDF API)
+    WiFi.persistent(false);          // Don't save WiFi config to flash
+    WiFi.setAutoReconnect(true);     // Auto-reconnect if connection drops
+    
+    wsPortalBegin();                 // start HTTP + WebSocket
+  }
 
   //init our forest arrays
   for (int i = 0; i < NUM_TREES; ++i) {
@@ -143,6 +159,7 @@ void setup() {
 void loop() {
 
  mesh.update();
+ wsPortalUpdate();   // drain logs & serve clients; very quick
 
   //set the clock offset incase it isn't set
   //if (clockOffset == 0) getClockOffset();
@@ -264,7 +281,7 @@ void loop() {
          }
          proximity = 100;
        } else {
-         if (proximity != 100) proximity = proximity + 1;
+         if (proximity != 100 && random(3) == 1) proximity = proximity + 1;
        }
      
     } else {

@@ -442,7 +442,7 @@ void patternRoundTheTrees() {
 //Select current tree for one tree at a time patterns
 void patternSingleTree() {
   //fallback to default if msPerTree is not set
-  int msPerTree = 1000;
+  int msPerTree = 100;
   
   //get current tree
   const long t = theClock() / msPerTree;
@@ -454,6 +454,18 @@ void patternSingleTree() {
   if (currentTree == TREE_NUMBER) {
     // It's this tree's turn: light the whole tree with current hue
     fill_solid(leds, NUM_LEDS, CHSV(hue, 255, 255));
+  } else if (currentTree == (TREE_NUMBER - 1)) {
+    // It's this tree's turn: light the whole tree with current hue
+    fill_solid(leds, NUM_LEDS, CHSV(hue, 255, 195));
+  } else if (currentTree == (TREE_NUMBER - 2)) {
+    // It's this tree's turn: light the whole tree with current hue
+    fill_solid(leds, NUM_LEDS, CHSV(hue, 255, 135));
+  } else if (currentTree == (TREE_NUMBER - 3)) {
+    // It's this tree's turn: light the whole tree with current hue
+    fill_solid(leds, NUM_LEDS, CHSV(hue, 255, 75));
+  } else if (currentTree == (TREE_NUMBER - 4)) {
+    // It's this tree's turn: light the whole tree with current hue
+    fill_solid(leds, NUM_LEDS, CHSV(hue, 255, 35));
   } else {
     // Not our turn: stay dark
     darkForest();
@@ -463,7 +475,7 @@ void patternSingleTree() {
 //Spin the legs of the trees
 void patternSpinLegs() {
   //fallback to default if msPerLeg is not set
-  int msPerLeg = 1000;
+  int msPerLeg = 100;
 
   //get the current leg
   const long t = theClock() / msPerLeg;
@@ -481,9 +493,10 @@ void patternSpinLegs() {
 void patternWave() {
   //there will be a center LED from 1 to 60
   const long t = theClock();
-  const byte hue = (t / 10) % 256;  
-  int point = (t / 8) % 120; // = about 1 second from top to bottom of tree 
+  const byte hue = (t / 2) % 256;  
+  int point = ((t / 8) + TREE_NUMBER * 4) % 120; // = about 1 second from top to bottom of tree 
   clearLEDs();
+ 
   if (point >= 50) {
     point = 99 - point;
   }
@@ -496,9 +509,9 @@ void patternWave() {
   //move out from cnter in both directions with a fade
   for (int i = 1; i < 10; ++i) {
     int pp = point + i + 5;
-    if (pp >= 60 ) pp -= 60;
+    if (pp >= 60 ) pp = 59;
     int pn = point + 5 - i;
-    if (pn < 0) pn += 60;
+    if (pn < 0) pn = 0;
 
     setAllBranchLed(pp, CHSV(hue, 255, 255 - i * 45));
     setAllBranchLed(pn, CHSV(hue, 255, 255 - i * 45));

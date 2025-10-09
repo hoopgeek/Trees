@@ -7,13 +7,13 @@ void receivedCallback(uint32_t from, String &msg) {
   if (TREE_DEBUG) Serial.println(msg);
   // String json = msg.c_str();  //now passing it stright in below to save memory
 
-  if (msg.length() > 30) {
+  if (msg.length() > 42) {
     //too long for buffer
     if (TREE_DEBUG) Serial.println("WARNING: msg too long for buffer");
     return;
   }
 
-  DynamicJsonDocument doc(30);  //was 1024 but memory errors
+  DynamicJsonDocument doc(42);  //was 1024 but memory errors
   DeserializationError error = deserializeJson(doc, msg);
   if (error) {
     if (TREE_DEBUG) Serial.print("deserializeJson() failed: ");
@@ -22,8 +22,9 @@ void receivedCallback(uint32_t from, String &msg) {
     // updateAlive(from);
     int treeNumber = getTreeIndexByNodeId(from);  //returns 0 if not found
     if (treeNumber > 0) {
+      String thisTree = doc["tr"];
       String thisState = doc["st"];
-
+      String thisClock = doc["cl"];
       if (isValidNumber(thisState)) {
         int intState = thisState.toInt();
         if (intState <= FORESTPATTERENS + DRAW) {
@@ -65,6 +66,7 @@ void receivedCallback(uint32_t from, String &msg) {
       }
     }
   }
+  wsPortalForwardMesh(from, msg);  // mirror to WebSocket
 }
 
 bool isLiveNode(long nodeId) {
@@ -115,7 +117,8 @@ void broadcastStatus() {
 
     // Serialize the message
     // Serial.println("broadcastStatus()");
-    DynamicJsonDocument doc(30);
+    DynamicJsonDocument doc(42);
+    doc["tr"] = TREE_NUMBER;
     doc["st"] = forestState[0];
     // Serial.println(forestState[0]);
     //if (forestState[0] >= ACTIVATED) {
@@ -128,6 +131,12 @@ void broadcastStatus() {
     // } else {
     if (forestState[0] > ACTIVATED) {
       doc["ti"] = activateTime;  //timerMilliseconds;
+    } else {
+      doc["cl"] = mesh.getNodeTime();
+      char buf[16]; // plenty for "12345:12345"
+      snprintf(buf, sizeof(buf), "%d:%d", activeTreesCount(), aliveTreesCount());
+      doc["s"] = buf;
+
     }
     String msg;
     serializeJson(doc, msg);  //
