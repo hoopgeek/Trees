@@ -475,7 +475,7 @@ void patternSingleTree() {
 //Spin the legs of the trees
 void patternSpinLegs() {
   //fallback to default if msPerLeg is not set
-  int msPerLeg = 100;
+  int msPerLeg = 200;
 
   //get the current leg
   const long t = theClock() / msPerLeg;

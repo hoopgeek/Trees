@@ -3,10 +3,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <painlessMesh.h>
-#include <WebServer.h>
-#include <WebSocketsServer.h>
-#include <ESPmDNS.h>
-#include <esp_wifi.h>
+
 
 #define MESH_PREFIX "FoC"
 #define MESH_PASSWORD "JsFS)weI9J#*ij4F~jn="
@@ -24,7 +21,7 @@ Task sendTask( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
 void wsPortalBegin(const char* title = "painlessMesh Viewer");
 void wsPortalUpdate();
 
-#define TREE_NUMBER 11 //each tree is numbered in order based on where it is located
+#define TREE_NUMBER 24 //each tree is numbered in order based on where it is located
 #define DETECTINCHES 48
 #define TREE_DEBUG true
 
@@ -81,7 +78,7 @@ long lastDirty = 0;
 bool imAlone = true;
 bool freshState = false;
 
-#define NUM_TREES 25
+#define NUM_TREES 18
 int forestState[NUM_TREES + 1];  //forestState[NUM_TREES] is the collective forest state, forestState[0] is me
 long forestNodes[NUM_TREES];      //keep a table of the mesh node ids forestNodes[0] is me
 long forestLastAlive[NUM_TREES];  //millis of the last time we heard from each tree
@@ -123,20 +120,25 @@ void setup() {
   mesh.onChangedConnections(&changedConnectionCallback);
   mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
   mesh.initOTAReceive("TREE");
+  //mesh.setMaxConnections(6);
+  //WiFi.setTxPower(WIFI_POWER_11dBm);   // lower from default
+  WiFi.setSleep(false);  // ESP32; ESP8266: WiFi.setSleepMode(WIFI_NONE_SLEEP);
+
+
   if (TREE_NUMBER == 12) mesh.setRoot(true);
   // On *all* nodes (including the root):
   mesh.setContainsRoot(true);
   userScheduler.addTask( sendTask );
   sendTask.enable();
-  if (TREE_NUMBER == 12) {
-    // Configure WiFi power settings BEFORE starting web portal
-    WiFi.setSleep(false);            // Disable WiFi sleep (Arduino API)
-    esp_wifi_set_ps(WIFI_PS_NONE);   // Disable power saving (ESP-IDF API)
-    WiFi.persistent(false);          // Don't save WiFi config to flash
-    WiFi.setAutoReconnect(true);     // Auto-reconnect if connection drops
+  // if (TREE_NUMBER == 99) {
+  //   // Configure WiFi power settings BEFORE starting web portal
+  //   WiFi.setSleep(false);            // Disable WiFi sleep (Arduino API)
+  //   esp_wifi_set_ps(WIFI_PS_NONE);   // Disable power saving (ESP-IDF API)
+  //   WiFi.persistent(false);          // Don't save WiFi config to flash
+  //   WiFi.setAutoReconnect(true);     // Auto-reconnect if connection drops
     
-    wsPortalBegin();                 // start HTTP + WebSocket
-  }
+  //   wsPortalBegin();                 // start HTTP + WebSocket
+  // }
 
   //init our forest arrays
   for (int i = 0; i < NUM_TREES; ++i) {
@@ -159,7 +161,7 @@ void setup() {
 void loop() {
 
  mesh.update();
- wsPortalUpdate();   // drain logs & serve clients; very quick
+ //wsPortalUpdate();   // drain logs & serve clients; very quick
 
   //set the clock offset incase it isn't set
   //if (clockOffset == 0) getClockOffset();

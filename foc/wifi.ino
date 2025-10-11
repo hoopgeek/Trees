@@ -66,7 +66,7 @@ void receivedCallback(uint32_t from, String &msg) {
       }
     }
   }
-  wsPortalForwardMesh(from, msg);  // mirror to WebSocket
+  //wsPortalForwardMesh(from, msg);  // mirror to WebSocket
 }
 
 bool isLiveNode(long nodeId) {
