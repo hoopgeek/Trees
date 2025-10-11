@@ -17,9 +17,7 @@ painlessMesh mesh;
 void sendMessage() ; // callback func
 Task sendTask( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
 
-// Forward declarations for ws_portal functions
-void wsPortalBegin(const char* title = "painlessMesh Viewer");
-void wsPortalUpdate();
+
 
 #define TREE_NUMBER 24 //each tree is numbered in order based on where it is located
 #define DETECTINCHES 48
@@ -88,7 +86,7 @@ CRGB leds[NUM_LEDS];
 byte masterHue;
 long patternTime = 0;
 byte proximity = 100;
-byte maxSensor[3] = {60,60,60};
+byte maxSensor[3] = {54,54,54};
 byte lastSensorValue = 100;
 int currentSensor = 0;
 
@@ -125,9 +123,9 @@ void setup() {
   WiFi.setSleep(false);  // ESP32; ESP8266: WiFi.setSleepMode(WIFI_NONE_SLEEP);
 
 
-  if (TREE_NUMBER == 12) mesh.setRoot(true);
+  // if (TREE_NUMBER == 12) mesh.setRoot(true);
   // On *all* nodes (including the root):
-  mesh.setContainsRoot(true);
+  // mesh.setContainsRoot(true);
   userScheduler.addTask( sendTask );
   sendTask.enable();
   // if (TREE_NUMBER == 99) {
@@ -195,7 +193,7 @@ void loop() {
   tooManyLEDsFix();
 
   static uint32_t lastFrame = 0;
-  if (millis() - lastFrame >= 16) { // ~60 FPS
+  if (millis() - lastFrame >= 20) { // ~50 FPS
     FastLED.show();
     lastFrame = millis();
   }
@@ -260,7 +258,7 @@ void loop() {
   }
 
   // *check for sensor detection every 100ms
-  if (millis() - lastSensor > 100 && lastPartyTime < millis() - (PARTY_MILLISECONDS + REST_MILLISECONDS)) {
+  if (millis() - lastSensor > 120 && lastPartyTime < millis() - (PARTY_MILLISECONDS + REST_MILLISECONDS)) {
     byte sensors = gotSensor();
     
     //running average to smooth a little.  
